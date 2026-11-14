@@ -1,0 +1,3681 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>人體血液循環與器官物質交換演示系統</title>
+  <style>
+    :root {
+      font-family: 'Microsoft JhengHei', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #e2e8f0;
+      background: #0b1120;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: #0b1120;
+      color: #e2e8f0;
+      touch-action: manipulation;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:focus-visible {
+      outline: 2px solid #7dd3fc;
+      outline-offset: 2px;
+    }
+
+    /* 55-60 吋電子白板外框：四邊預留 5%~6% 安全空間 */
+    .app {
+      width: 90vw;
+      height: 88dvh;
+      margin: 6dvh auto;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+      min-height: 0;
+    }
+
+    /* Top Header */
+    .topbar {
+      flex: none;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid #475569;
+      padding-bottom: 8px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: clamp(16px, 1.3vw, 22px);
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      color: #f8fafc;
+      white-space: nowrap;
+    }
+
+    .pulse-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background-color: #ef4444;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.9);
+      animation: pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      flex: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+
+    /* Primary Module Tabs + Sub Tabs */
+    .header-tabs {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .primary-tabs, .domain-tabs {
+      display: flex;
+      gap: 5px;
+      background: #0f172a;
+      border: 1px solid #38bdf8;
+      padding: 4px;
+      border-radius: 8px;
+    }
+
+    .domain-tabs {
+      border-color: #475569;
+    }
+
+    .primary-tab-btn, .tab-btn {
+      color: #94a3b8;
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      padding: 6px 11px;
+      font-size: clamp(13px, 0.92vw, 16.5px);
+      font-weight: 700;
+      white-space: nowrap;
+      transition: all 0.18s ease;
+    }
+
+    .primary-tab-btn:hover:not(.active), .tab-btn:hover:not(.active) {
+      color: #f8fafc;
+      background: #1e293b;
+    }
+
+    .primary-tab-btn.active {
+      color: #ffffff;
+      background: #0284c7;
+      box-shadow: 0 0 10px rgba(2, 132, 199, 0.55);
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background: #2563eb;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.55);
+    }
+
+    /* Page View Containers */
+    .page-view {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+      display: none;
+    }
+
+    .page-view.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Main Workspace: 74% Stage + 26% Control Panel */
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 74fr) minmax(290px, 26fr);
+      gap: 12px;
+    }
+
+    /* Stage Panel */
+    .stage-panel {
+      background: #020617;
+      border: 2px solid #475569;
+      border-radius: 10px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .stage-head {
+      height: 42px;
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: #0f172a;
+      border-bottom: 1px solid #334155;
+      font-size: clamp(14px, 1vw, 17px);
+    }
+
+    .stage-head strong {
+      color: #f8fafc;
+    }
+
+    .stage-head span {
+      color: #94a3b8;
+      font-size: clamp(13px, 0.9vw, 15px);
+    }
+
+    .stage-body {
+      flex: 1;
+      min-height: 0;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .stage-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Right Control Panel */
+    .control-panel {
+      background: #0f172a;
+      border: 1px solid #475569;
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    #view-lymph .control-panel {
+      padding: 11px 13px;
+      gap: 8px;
+    }
+
+    #view-lymph .cat-grid {
+      gap: 5px;
+    }
+
+    #view-lymph .cat-btn {
+      padding: 7px 12px;
+      font-size: clamp(14px, 1vw, 17px);
+    }
+
+    /* Vessel Comparison View (#view-vessels) */
+    #view-vessels .control-panel {
+      padding: 10px 12px;
+      gap: 6px;
+    }
+
+    #view-vessels .panel-section-title {
+      margin-bottom: 4px;
+      font-size: clamp(14px, 0.98vw, 17px);
+    }
+
+    #view-vessels .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5px;
+    }
+
+    #view-vessels .metric-btn {
+      width: 100%;
+      padding: 5px 8px;
+      border-radius: 7px;
+      border: 1.5px solid #475569;
+      background: #1e293b;
+      color: #f8fafc;
+      font-size: clamp(13px, 0.9vw, 15.5px);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.18s ease;
+    }
+
+    #view-vessels .metric-btn:hover { background: #334155; }
+    #view-vessels .metric-btn.active {
+      border-color: #facc15;
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.35);
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    #view-vessels .metric-btn.full-span {
+      grid-column: 1 / -1;
+      justify-content: center;
+    }
+
+    #view-vessels .focus-card {
+      padding: 10px 12px;
+      gap: 5px;
+    }
+
+    #view-vessels .focus-title {
+      font-size: clamp(16px, 1.15vw, 20px);
+    }
+
+    #view-vessels .focus-desc {
+      font-size: clamp(13.5px, 0.95vw, 16px);
+      line-height: 1.45;
+    }
+
+    .vessel-bar-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .vessel-bar-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .vessel-bar-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: clamp(13px, 0.88vw, 15px);
+      font-weight: 800;
+      color: #e2e8f0;
+    }
+
+    .vessel-bar-track {
+      height: 10px;
+      background: #1e293b;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #334155;
+    }
+
+    .vessel-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Vessel SVG Spotlight States */
+    #vessels-svg .v-part {
+      transition: opacity 0.25s ease, filter 0.25s ease;
+    }
+    #vessels-svg .v-part.v-dim {
+      opacity: 0.16 !important;
+      filter: none !important;
+    }
+    #vessels-svg .v-part.v-lit {
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.95)) drop-shadow(0 0 18px rgba(56, 189, 248, 0.55));
+    }
+    #vessels-svg .v-row-dim {
+      opacity: 0.2 !important;
+      transition: opacity 0.25s ease;
+    }
+    #vessels-svg .v-row-lit > rect:first-child {
+      stroke: #facc15 !important;
+      stroke-width: 3.5 !important;
+      filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.55));
+    }
+    #vessels-svg .v-width-guide {
+      opacity: 0.35;
+      transition: opacity 0.25s ease, filter 0.25s ease;
+    }
+    #vessels-svg .v-width-guide.v-lit {
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 7px rgba(56, 189, 248, 0.95));
+    }
+
+    /* Blood Components View (#view-blood) */
+    #view-blood .control-panel {
+      padding: 10px 12px;
+      gap: 7px;
+    }
+    #view-blood .panel-section-title {
+      margin-bottom: 4px;
+      font-size: clamp(14px, 0.98vw, 17px);
+    }
+    #view-blood .cat-grid {
+      gap: 5px;
+    }
+    #view-blood .cat-btn {
+      padding: 6px 10px;
+      font-size: clamp(13px, 0.92vw, 16px);
+    }
+    #view-blood .blood-comp-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5px;
+    }
+    #view-blood .blood-comp-btn {
+      padding: 6px 8px;
+      border-radius: 7px;
+      border: 1.5px solid #475569;
+      background: #1e293b;
+      color: #f8fafc;
+      font-size: clamp(13px, 0.9vw, 15.5px);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.18s ease;
+    }
+    #view-blood .blood-comp-btn:hover { background: #334155; }
+    #view-blood .blood-comp-btn.active {
+      border-color: #facc15;
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.35);
+      background: #2563eb;
+      color: #ffffff;
+    }
+    #view-blood .blood-comp-btn.full-span {
+      grid-column: 1 / -1;
+      justify-content: center;
+    }
+    #view-blood .focus-card {
+      padding: 10px 12px;
+      gap: 5px;
+    }
+    #view-blood .focus-title {
+      font-size: clamp(16px, 1.15vw, 20px);
+    }
+    #view-blood .focus-desc {
+      font-size: clamp(13.5px, 0.94vw, 16px);
+      line-height: 1.48;
+    }
+    #blood-svg .b-part {
+      transition: opacity 0.25s ease, filter 0.25s ease;
+    }
+    #blood-svg .b-part.b-dim {
+      opacity: 0.16 !important;
+      filter: none !important;
+    }
+    #blood-svg .b-part.b-lit {
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.92)) drop-shadow(0 0 16px rgba(56, 189, 248, 0.55));
+    }
+
+    .panel-section-title {
+      font-size: clamp(15px, 1.05vw, 18px);
+      font-weight: 800;
+      color: #93c5fd;
+      margin-bottom: 6px;
+      letter-spacing: 0.03em;
+    }
+
+    /* 4 Category / Organ Buttons */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 7px;
+      flex: none;
+    }
+
+    .cat-btn, .organ-btn, .substance-filter-btn {
+      width: 100%;
+      text-align: left;
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: 1.5px solid #475569;
+      background: #1e293b;
+      color: #f8fafc;
+      font-size: clamp(15px, 1.05vw, 18px);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.18s ease;
+    }
+
+    .cat-btn:hover, .organ-btn:hover, .substance-filter-btn:hover {
+      background: #334155;
+    }
+
+    .cat-btn.left-style {
+      border-color: rgba(239, 68, 68, 0.55);
+      background: rgba(185, 28, 28, 0.18);
+      color: #fca5a5;
+    }
+
+    .cat-btn.right-style {
+      border-color: rgba(59, 130, 246, 0.55);
+      background: rgba(29, 78, 216, 0.18);
+      color: #93c5fd;
+    }
+
+    .cat-btn.active, .organ-btn.active, .substance-filter-btn.active {
+      border-color: #facc15;
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.35);
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .cat-btn.left-style.active { background: #b91c1c; color: #ffffff; }
+    .cat-btn.right-style.active { background: #1d4ed8; color: #ffffff; }
+
+    /* Live Focus Card */
+    .focus-card {
+      flex: 1;
+      min-height: 0;
+      background: #020617;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      overflow-y: auto;
+    }
+
+    .focus-badge {
+      align-self: flex-start;
+      font-size: clamp(13px, 0.9vw, 15px);
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #7dd3fc;
+      border: 1px solid #334155;
+    }
+
+    .focus-title {
+      font-size: clamp(18px, 1.3vw, 22px);
+      font-weight: 800;
+      color: #f8fafc;
+      line-height: 1.3;
+    }
+
+    .focus-desc {
+      font-size: clamp(15px, 1.05vw, 18px);
+      line-height: 1.55;
+      color: #cbd5e1;
+    }
+
+    /* Step Tour Controls */
+    .step-box {
+      flex: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      padding-top: 8px;
+      border-top: 1px solid #334155;
+    }
+
+    .step-dots {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+    }
+
+    .step-dot-btn {
+      padding: 4px 0;
+      border-radius: 5px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 800;
+      transition: all 0.15s ease;
+    }
+
+    .step-dot-btn.visited {
+      background: #1e3a8a;
+      color: #bfdbfe;
+      border-color: #3b82f6;
+    }
+
+    .step-dot-btn.current {
+      background: #eab308;
+      color: #1e293b;
+      border-color: #fef08a;
+      box-shadow: 0 0 8px rgba(250, 204, 21, 0.7);
+    }
+
+    .step-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-btn {
+      padding: 9px 10px;
+      border-radius: 7px;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: #f8fafc;
+      font-size: clamp(14px, 1vw, 17px);
+      font-weight: 700;
+      transition: background 0.15s ease;
+    }
+
+    .step-btn:hover { background: #334155; }
+    .step-btn.primary { background: #2563eb; border-color: #3b82f6; }
+    .step-btn.primary:hover { background: #1d4ed8; }
+
+    .step-counter {
+      font-family: Consolas, monospace;
+      font-size: clamp(14px, 1vw, 17px);
+      font-weight: 800;
+      color: #fbbf24;
+      padding: 0 4px;
+      white-space: nowrap;
+    }
+
+    /* Filter Row for Organ View */
+    .filter-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .substance-filter-btn {
+      justify-content: center;
+      text-align: center;
+      padding: 8px 6px;
+      font-size: clamp(13px, 0.95vw, 16px);
+    }
+
+    /* Bottom Playbar */
+    .playbar {
+      height: 48px;
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-top: 1px solid #475569;
+      padding-top: 8px;
+    }
+
+    .play-btn {
+      padding: 8px 18px;
+      border-radius: 7px;
+      border: 1px solid #3b82f6;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: clamp(14px, 1vw, 17px);
+      font-weight: 700;
+    }
+
+    .play-btn.paused { background: #0f766e; border-color: #14b8a6; }
+
+    .reset-btn {
+      padding: 8px 16px;
+      border-radius: 7px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: clamp(14px, 1vw, 17px);
+      font-weight: 700;
+    }
+
+    .reset-btn:hover { background: #334155; }
+
+    .speed-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 7px;
+      padding: 3px;
+    }
+
+    .speed-btn {
+      border: 0;
+      background: transparent;
+      color: #94a3b8;
+      padding: 5px 14px;
+      border-radius: 5px;
+      font-size: clamp(14px, 0.95vw, 16px);
+      font-weight: 700;
+    }
+
+    .speed-btn.active {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #475569;
+    }
+
+    .playbar-status {
+      margin-left: auto;
+      font-size: clamp(14px, 0.95vw, 16px);
+      color: #fbbf24;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* SVG Interactive States */
+    .vessel-path {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: opacity 0.25s ease, filter 0.25s ease;
+    }
+
+    .dimmed { opacity: 0.13 !important; }
+    .trail-visited { opacity: 0.5 !important; }
+    .highlighted {
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.95));
+    }
+
+    .clickable-node {
+      cursor: pointer;
+      transition: opacity 0.25s ease, filter 0.25s ease;
+    }
+
+    .clickable-node:hover { opacity: 0.9; }
+
+    @keyframes beacon-ring {
+      0% { transform: scale(0.95); opacity: 0.95; }
+      70% { transform: scale(1.22); opacity: 0.2; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+
+    .beacon-circle {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: beacon-ring 1.3s ease-out infinite;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="pulse-dot"></span>
+        <span>人體循環系統互動演示</span>
+      </div>
+
+      <div class="header-tabs">
+        <!-- Main Module Switcher -->
+        <div class="primary-tabs" role="tablist" aria-label="演示單元切換">
+          <button class="primary-tab-btn active" data-view="circulation">① 心臟雙循環演示</button>
+          <button class="primary-tab-btn" data-view="organs">② 各器官物質變化</button>
+          <button class="primary-tab-btn" data-view="lymph">③ 淋巴循環系統</button>
+          <button class="primary-tab-btn" data-view="vessels">④ 血管構造比較</button>
+          <button class="primary-tab-btn" data-view="blood">⑤ 血液成分與功能</button>
+        </div>
+
+        <!-- Loop Mode Tabs (Shown in Circulation View) -->
+        <div id="circulation-loop-tabs" class="domain-tabs" role="tablist" aria-label="循環路徑切換">
+          <button class="tab-btn active" data-mode="all">完整雙循環</button>
+          <button class="tab-btn" data-mode="systemic">體循環</button>
+          <button class="tab-btn" data-mode="pulmonary">肺循環</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==================== VIEW 1: HEART CIRCULATION ==================== -->
+    <div id="view-circulation" class="page-view active">
+      <main class="workspace">
+        <!-- Left: SVG Diagram -->
+        <section class="stage-panel">
+          <div class="stage-head">
+            <strong>心臟與雙循環解剖示意圖（面對面視角）</strong>
+            <span id="circ-stage-hint">點選「下一步」可逐站點亮循環路徑，或直接點擊圖上構造</span>
+          </div>
+
+          <div class="stage-body">
+            <svg id="circulation-svg" class="stage-svg" viewBox="0 0 920 560" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="grad-lung" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#2563eb" />
+                  <stop offset="50%" stop-color="#9333ea" />
+                  <stop offset="100%" stop-color="#dc2626" />
+                </linearGradient>
+                <linearGradient id="grad-body" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#2563eb" />
+                  <stop offset="50%" stop-color="#9333ea" />
+                  <stop offset="100%" stop-color="#dc2626" />
+                </linearGradient>
+              </defs>
+
+              <!-- Orientation Labels -->
+              <text x="16" y="30" font-size="18" font-weight="800" fill="#60a5fa">← 圖左側＝人體右側（右心・缺氧血）</text>
+              <text x="904" y="30" font-size="18" font-weight="800" fill="#f87171" text-anchor="end">圖右側＝人體左側（左心・充氧血）→</text>
+
+              <!-- ==================== VESSEL PATHS ==================== -->
+              <!-- 肺動脈 -->
+              <path id="path-pulm-art" data-loop="pulmonary" data-cat="right-heart ventricles" data-step="8" data-info="pulm-art"
+                d="M 350 326 L 285 326 C 228 326, 228 84, 305 84 L 335 84"
+                class="vessel-path clickable-node" stroke="#2563eb" stroke-width="18" />
+
+              <!-- 肺靜脈 -->
+              <path id="path-pulm-vein" data-loop="pulmonary" data-cat="left-heart atria" data-step="10" data-info="pulm-vein"
+                d="M 585 84 L 615 84 C 692 84, 692 230, 610 230 L 570 230"
+                class="vessel-path clickable-node" stroke="#dc2626" stroke-width="18" />
+
+              <!-- 大動脈（主動脈） -->
+              <path id="path-aorta" data-loop="systemic" data-cat="left-heart ventricles" data-step="1" data-info="aorta"
+                d="M 570 326 L 665 326 C 745 326, 745 366, 745 404"
+                class="vessel-path clickable-node" stroke="#dc2626" stroke-width="20" />
+
+              <!-- 小動脈 -->
+              <path id="path-arteriole" data-loop="systemic" data-cat="left-heart" data-step="2" data-info="arteriole"
+                d="M 745 404 C 745 466, 700 486, 615 486 L 585 486"
+                class="vessel-path clickable-node" stroke="#ef4444" stroke-width="10" />
+
+              <!-- 小靜脈 -->
+              <path id="path-venule" data-loop="systemic" data-cat="right-heart" data-step="4" data-info="venule"
+                d="M 335 486 L 305 486 C 220 486, 175 466, 175 404"
+                class="vessel-path clickable-node" stroke="#3b82f6" stroke-width="10" />
+
+              <!-- 上、下大靜脈 -->
+              <path id="path-vena-cava" data-loop="systemic" data-cat="right-heart atria" data-step="5" data-info="vena-cava"
+                d="M 175 404 C 175 312, 175 230, 290 230 L 350 230"
+                class="vessel-path clickable-node" stroke="#1d4ed8" stroke-width="20" />
+
+              <!-- Internal Heart Flow Guides -->
+              <path id="path-right-heart" data-loop="both" data-cat="right-heart" d="M 403 230 L 403 326" fill="none" stroke="none" />
+              <path id="path-left-heart" data-loop="both" data-cat="left-heart" d="M 517 230 L 517 326" fill="none" stroke="none" />
+
+              <!-- ==================== LUNG CAPILLARIES ==================== -->
+              <g id="node-lungs" class="clickable-node" data-info="lungs" data-loop="pulmonary" data-step="9">
+                <rect x="330" y="50" width="260" height="68" rx="18" fill="rgba(147, 51, 234, 0.14)" stroke="url(#grad-lung)" stroke-width="3.5" />
+                <path d="M 335 84 C 380 60, 540 60, 585 84" fill="none" stroke="url(#grad-lung)" stroke-width="6" />
+                <path id="path-lung-cap" d="M 335 84 L 585 84" fill="none" stroke="url(#grad-lung)" stroke-width="6" />
+                <path d="M 335 84 C 380 108, 540 108, 585 84" fill="none" stroke="url(#grad-lung)" stroke-width="6" />
+
+                <text x="460" y="40" font-size="20" font-weight="800" text-anchor="middle" fill="#f8fafc">肺泡微血管（肺部氣體交換）</text>
+                <rect x="352" y="106" width="102" height="28" rx="7" fill="#2563eb" />
+                <text x="403" y="126" font-size="16" font-weight="800" text-anchor="middle" fill="#ffffff">CO₂ 排出 ↑</text>
+                <rect x="466" y="106" width="102" height="28" rx="7" fill="#dc2626" />
+                <text x="517" y="126" font-size="16" font-weight="800" text-anchor="middle" fill="#ffffff">O₂ 進入 ↓</text>
+              </g>
+
+              <!-- ==================== BODY CAPILLARIES ==================== -->
+              <g id="node-body" class="clickable-node" data-info="body" data-loop="systemic" data-step="3">
+                <rect x="330" y="452" width="260" height="68" rx="18" fill="rgba(147, 51, 234, 0.14)" stroke="url(#grad-body)" stroke-width="3.5" />
+                <path d="M 585 486 C 540 462, 380 462, 335 486" fill="none" stroke="url(#grad-body)" stroke-width="6" />
+                <path id="path-body-cap" d="M 585 486 L 335 486" fill="none" stroke="url(#grad-body)" stroke-width="6" />
+                <path d="M 585 486 C 540 510, 380 510, 335 486" fill="none" stroke="url(#grad-body)" stroke-width="6" />
+
+                <text x="460" y="546" font-size="20" font-weight="800" text-anchor="middle" fill="#f8fafc">組織微血管（全身細胞交換物質）</text>
+                <rect x="350" y="430" width="104" height="28" rx="7" fill="#2563eb" />
+                <text x="402" y="450" font-size="16" font-weight="800" text-anchor="middle" fill="#ffffff">CO₂ 進入 ↑</text>
+                <rect x="466" y="430" width="104" height="28" rx="7" fill="#dc2626" />
+                <text x="518" y="450" font-size="16" font-weight="800" text-anchor="middle" fill="#ffffff">O₂ 給細胞 ↓</text>
+              </g>
+
+              <!-- ==================== HEART (CENTER) ==================== -->
+              <g id="heart-group">
+                <rect x="336" y="176" width="248" height="214" rx="30" fill="#1e293b" stroke="#64748b" stroke-width="3" opacity="0.28" />
+
+                <!-- Right Atrium -->
+                <g id="node-ra" class="clickable-node" data-info="ra" data-loop="systemic" data-cat="right-heart atria" data-step="6">
+                  <path d="M 350 192 C 350 178, 456 178, 456 192 L 456 274 L 350 274 Z" fill="#1d4ed8" stroke="#93c5fd" stroke-width="3" />
+                  <text x="403" y="228" font-size="22" font-weight="800" text-anchor="middle" fill="#ffffff">右心房</text>
+                  <text x="403" y="253" font-size="15" font-weight="700" text-anchor="middle" fill="#dbeafe">連靜脈・回心</text>
+                </g>
+
+                <!-- Right Ventricle -->
+                <g id="node-rv" class="clickable-node" data-info="rv" data-loop="pulmonary" data-cat="right-heart ventricles" data-step="7">
+                  <path d="M 350 286 L 456 286 L 456 376 C 400 376, 350 352, 350 318 Z" fill="#1e40af" stroke="#93c5fd" stroke-width="3" />
+                  <text x="403" y="328" font-size="22" font-weight="800" text-anchor="middle" fill="#ffffff">右心室</text>
+                  <text x="403" y="353" font-size="15" font-weight="700" text-anchor="middle" fill="#dbeafe">連動脈・離心</text>
+                </g>
+
+                <!-- Left Atrium -->
+                <g id="node-la" class="clickable-node" data-info="la" data-loop="pulmonary" data-cat="left-heart atria" data-step="11">
+                  <path d="M 464 192 C 464 178, 570 178, 570 192 L 570 274 L 464 274 Z" fill="#b91c1c" stroke="#fca5a5" stroke-width="3" />
+                  <text x="517" y="228" font-size="22" font-weight="800" text-anchor="middle" fill="#ffffff">左心房</text>
+                  <text x="517" y="253" font-size="15" font-weight="700" text-anchor="middle" fill="#fee2e2">連靜脈・回心</text>
+                </g>
+
+                <!-- Left Ventricle -->
+                <g id="node-lv" class="clickable-node" data-info="lv" data-loop="systemic" data-cat="left-heart ventricles" data-step="0">
+                  <path d="M 464 286 L 570 286 L 570 318 C 570 352, 520 376, 464 376 Z" fill="#991b1b" stroke="#fca5a5" stroke-width="3" />
+                  <text x="517" y="328" font-size="22" font-weight="800" text-anchor="middle" fill="#ffffff">左心室</text>
+                  <text x="517" y="353" font-size="15" font-weight="700" text-anchor="middle" fill="#fee2e2">連動脈・離心</text>
+                </g>
+
+                <line x1="460" y1="184" x2="460" y2="376" stroke="#f8fafc" stroke-width="4.5" opacity="0.9" />
+
+                <!-- Valves: 心房↔心室間瓣膜 -->
+                <g id="node-valves-av" class="clickable-node" data-info="valves-av" data-cat="atria">
+                  <polygon points="356,280 374,292 392,280 374,270" fill="#facc15" stroke="#854d0e" stroke-width="2" />
+                  <polygon points="528,280 546,292 564,280 546,270" fill="#facc15" stroke="#854d0e" stroke-width="2" />
+                  <rect x="398" y="266" width="124" height="28" rx="7" fill="#facc15" stroke="#854d0e" stroke-width="2" />
+                  <text x="460" y="286" font-size="14" font-weight="900" text-anchor="middle" fill="#422006">心房↔心室瓣膜</text>
+                </g>
+
+                <!-- Valves: 心室↔動脈間瓣膜 -->
+                <g id="node-valves-sl" class="clickable-node" data-info="valves-sl" data-cat="ventricles">
+                  <!-- Right Ventricle -> Pulmonary Artery Valve -->
+                  <polygon points="354,310 338,326 354,342 361,326" fill="#facc15" stroke="#854d0e" stroke-width="2" />
+                  <!-- Left Ventricle -> Aorta Valve -->
+                  <polygon points="566,310 582,326 566,342 559,326" fill="#facc15" stroke="#854d0e" stroke-width="2" />
+                  <rect x="238" y="346" width="124" height="28" rx="7" fill="#facc15" stroke="#854d0e" stroke-width="2" />
+                  <text x="300" y="366" font-size="14" font-weight="900" text-anchor="middle" fill="#422006">心室↔動脈瓣膜</text>
+                  <rect x="558" y="346" width="124" height="28" rx="7" fill="#facc15" stroke="#854d0e" stroke-width="2" />
+                  <text x="620" y="366" font-size="14" font-weight="900" text-anchor="middle" fill="#422006">心室↔動脈瓣膜</text>
+                </g>
+              </g>
+
+              <!-- ==================== VESSEL LABELS ==================== -->
+              <g id="lbl-pulm-art" class="clickable-node" data-info="pulm-art" data-loop="pulmonary" data-cat="right-heart ventricles" data-step="8">
+                <rect x="52" y="102" width="152" height="56" rx="10" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2" />
+                <text x="128" y="126" font-size="19" font-weight="800" text-anchor="middle" fill="#ffffff">肺動脈</text>
+                <text x="128" y="148" font-size="15" font-weight="700" text-anchor="middle" fill="#bfdbfe">離心・流缺氧血</text>
+              </g>
+
+              <g id="lbl-pulm-vein" class="clickable-node" data-info="pulm-vein" data-loop="pulmonary" data-cat="left-heart atria" data-step="10">
+                <rect x="716" y="102" width="152" height="56" rx="10" fill="#7f1d1d" stroke="#f87171" stroke-width="2" />
+                <text x="792" y="126" font-size="19" font-weight="800" text-anchor="middle" fill="#ffffff">肺靜脈</text>
+                <text x="792" y="148" font-size="15" font-weight="700" text-anchor="middle" fill="#fecaca">回心・流充氧血</text>
+              </g>
+
+              <g id="lbl-vena-cava" class="clickable-node" data-info="vena-cava" data-loop="systemic" data-cat="right-heart atria" data-step="5">
+                <rect x="10" y="256" width="152" height="60" rx="10" fill="#1e40af" stroke="#93c5fd" stroke-width="2" />
+                <text x="86" y="281" font-size="19" font-weight="800" text-anchor="middle" fill="#ffffff">上、下大靜脈</text>
+                <text x="86" y="304" font-size="15" font-weight="700" text-anchor="middle" fill="#dbeafe">回心・粗管缺氧血</text>
+              </g>
+
+              <g id="lbl-venule" class="clickable-node" data-info="venule" data-loop="systemic" data-cat="right-heart" data-step="4">
+                <rect x="10" y="440" width="156" height="58" rx="10" fill="#2563eb" stroke="#93c5fd" stroke-width="2" />
+                <text x="88" y="464" font-size="19" font-weight="800" text-anchor="middle" fill="#ffffff">小靜脈</text>
+                <text x="88" y="486" font-size="15" font-weight="700" text-anchor="middle" fill="#dbeafe">較細・自微血管匯出</text>
+              </g>
+
+              <g id="lbl-aorta" class="clickable-node" data-info="aorta" data-loop="systemic" data-cat="left-heart ventricles" data-step="1">
+                <rect x="756" y="314" width="156" height="60" rx="10" fill="#991b1b" stroke="#fca5a5" stroke-width="2" />
+                <text x="834" y="339" font-size="18" font-weight="800" text-anchor="middle" fill="#ffffff">大動脈(主動脈)</text>
+                <text x="834" y="362" font-size="15" font-weight="700" text-anchor="middle" fill="#fee2e2">離心・粗管充氧血</text>
+              </g>
+
+              <g id="lbl-arteriole" class="clickable-node" data-info="arteriole" data-loop="systemic" data-cat="left-heart" data-step="2">
+                <rect x="754" y="440" width="156" height="58" rx="10" fill="#b91c1c" stroke="#fca5a5" stroke-width="2" />
+                <text x="832" y="464" font-size="19" font-weight="800" text-anchor="middle" fill="#ffffff">小動脈</text>
+                <text x="832" y="486" font-size="15" font-weight="700" text-anchor="middle" fill="#fee2e2">較細・接微血管</text>
+              </g>
+
+              <!-- Active Step Beacon -->
+              <g id="step-beacon" style="display:none;">
+                <circle class="beacon-circle" cx="0" cy="0" r="34" fill="none" stroke="#facc15" stroke-width="5" />
+                <circle cx="0" cy="-42" r="16" fill="#eab308" stroke="#fef08a" stroke-width="2.5" />
+                <text id="beacon-num" x="0" y="-36" font-size="17" font-weight="900" text-anchor="middle" fill="#0f172a">1</text>
+              </g>
+
+              <!-- Animated Blood Particles Layer -->
+              <g id="particles-layer"></g>
+            </svg>
+          </div>
+        </section>
+
+        <!-- Right: Whiteboard Control Panel -->
+        <aside class="control-panel">
+          <div>
+            <div class="panel-section-title">心臟四大分類快選</div>
+            <div class="cat-grid">
+              <button data-cat="left-heart" class="cat-btn left-style">
+                <span>① 左心（充氧血）</span>
+                <span>左房・左室</span>
+              </button>
+              <button data-cat="right-heart" class="cat-btn right-style">
+                <span>② 右心（缺氧血）</span>
+                <span>右房・右室</span>
+              </button>
+              <button data-cat="atria" class="cat-btn">
+                <span>③ 心房（連靜脈・回心）</span>
+                <span>收血</span>
+              </button>
+              <button data-cat="ventricles" class="cat-btn">
+                <span>④ 心室（連動脈・離心）</span>
+                <span>送血</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="focus-card">
+            <span id="info-badge" class="focus-badge">總覽</span>
+            <h2 id="info-title" class="focus-title">雙循環演示準備就緒</h2>
+            <p id="info-desc" class="focus-desc">
+              點選下方「單步教學導覽」可從第 1 站（左心室）到第 12 站（左心房）逐一點亮路徑，讓學生看清目前血液流到哪裡！
+            </p>
+          </div>
+
+          <div class="step-box">
+            <div class="panel-section-title" style="margin-bottom: 0;">單步逐站導覽（1～12 站）</div>
+            <div id="step-dots" class="step-dots"></div>
+            <div class="step-row">
+              <button id="btn-prev-step" class="step-btn">← 上一步</button>
+              <span id="step-counter" class="step-counter">待命</span>
+              <button id="btn-next-step" class="step-btn primary">下一步 →</button>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <!-- ==================== VIEW 2: ORGAN SUBSTANCE EXCHANGE ==================== -->
+    <div id="view-organs" class="page-view">
+      <main class="workspace">
+        <!-- Left: Organ Blood Exchange Visual Stage -->
+        <section class="stage-panel">
+          <div class="stage-head">
+            <strong id="organ-stage-title">不同器官血液供給狀況：動脈流入 → 器官微血管 → 靜脈流出</strong>
+            <span id="organ-vessel-subtitle">觀察流經器官後哪些物質「減少 ↓」或「增加 ↑」</span>
+          </div>
+
+          <div class="stage-body">
+            <svg id="organ-svg" class="stage-svg" viewBox="0 0 920 560" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="organ-vessel-grad" gradientUnits="userSpaceOnUse" x1="40" y1="0" x2="880" y2="0">
+                  <stop id="ov-stop-start" offset="0%" stop-color="#dc2626" />
+                  <stop offset="50%" stop-color="#9333ea" />
+                  <stop id="ov-stop-end" offset="100%" stop-color="#2563eb" />
+                </linearGradient>
+              </defs>
+
+              <!-- Top Flow Schematic Header -->
+              <rect x="28" y="18" width="230" height="46" rx="10" fill="#1e293b" stroke="#475569" stroke-width="2" />
+              <text id="organ-in-label" x="143" y="47" font-size="20" font-weight="800" text-anchor="middle" fill="#fca5a5">動脈端（流入器官）</text>
+
+              <rect x="330" y="18" width="260" height="46" rx="10" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
+              <text id="organ-mid-label" x="460" y="47" font-size="21" font-weight="800" text-anchor="middle" fill="#f8fafc">一般器官（腦）</text>
+
+              <rect x="662" y="18" width="230" height="46" rx="10" fill="#1e293b" stroke="#475569" stroke-width="2" />
+              <text id="organ-out-label" x="777" y="47" font-size="20" font-weight="800" text-anchor="middle" fill="#93c5fd">靜脈端（流出器官）</text>
+
+              <!-- Organ Box & Blood Vessel Channel -->
+              <rect x="280" y="84" width="360" height="194" rx="22" fill="rgba(30, 41, 59, 0.65)" stroke="#475569" stroke-width="2.5" />
+
+              <!-- Main Vessel Pipe (2D Rect so gradient always renders cleanly) -->
+              <rect x="22" y="143" width="876" height="44" rx="22" fill="url(#organ-vessel-grad)" stroke="#cbd5e1" stroke-width="2" opacity="0.92" />
+              <line x1="40" y1="165" x2="880" y2="165" stroke="#ffffff" stroke-width="2" stroke-dasharray="10 12" opacity="0.25" />
+
+              <!-- Flow Direction Arrows -->
+              <text x="150" y="172" font-size="20" font-weight="900" text-anchor="middle" fill="#ffffff">流入 →→</text>
+              <text x="770" y="172" font-size="20" font-weight="900" text-anchor="middle" fill="#ffffff">→→ 流出</text>
+
+              <!-- Organ Name & Exchange Zone inside Vessel -->
+              <rect x="320" y="128" width="280" height="74" rx="14" fill="#020617" stroke="#facc15" stroke-width="2.5" opacity="0.92" />
+              <text id="organ-box-icon-name" x="460" y="160" font-size="22" font-weight="800" text-anchor="middle" fill="#fde047">🧠 腦部微血管交換區</text>
+              <text id="organ-box-sub" x="460" y="187" font-size="15" font-weight="700" text-anchor="middle" fill="#cbd5e1">細胞消耗 O₂、養分；排出 CO₂、廢物</text>
+
+              <!-- Dynamic Exchange Particle Layer (Moving along vessel + entering/leaving) -->
+              <g id="organ-particles-layer"></g>
+
+              <!-- Exchange Direction Arrows above/below vessel -->
+              <g id="organ-exchange-badges"></g>
+
+              <!-- ==================== 4 SUBSTANCE COMPARISON BARS (BOTTOM HALF) ==================== -->
+              <text x="460" y="314" font-size="20" font-weight="800" text-anchor="middle" fill="#f8fafc">血液流經器官前後：四大物質濃度變化比較（動脈 → 靜脈）</text>
+              <g id="substance-bars-group"></g>
+            </svg>
+          </div>
+        </section>
+
+        <!-- Right: Organ Selector & Focus Card -->
+        <aside class="control-panel">
+          <div>
+            <div class="panel-section-title">選擇器官（對應課本表格）</div>
+            <div class="cat-grid">
+              <button data-organ="brain" class="organ-btn active">
+                <span>① 一般器官（腦）</span>
+                <span>2減 2增</span>
+              </button>
+              <button data-organ="kidney" class="organ-btn">
+                <span>② 泌尿器官（腎臟）</span>
+                <span>3減 1增</span>
+              </button>
+              <button data-organ="lung" class="organ-btn">
+                <span>③ 呼吸器官（肺）</span>
+                <span>2減 2增</span>
+              </button>
+              <button data-organ="intestine" class="organ-btn">
+                <span>④ 消化吸收器官（小腸）</span>
+                <span>1減 3增</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="panel-section-title">物質變化篩選（教學聚焦）</div>
+            <div class="filter-row">
+              <button data-subfilter="all" class="substance-filter-btn active">全部顯示</button>
+              <button data-subfilter="decrease" class="substance-filter-btn">只看減少 ↓</button>
+              <button data-subfilter="increase" class="substance-filter-btn">只看增加 ↑</button>
+            </div>
+          </div>
+
+          <div class="focus-card">
+            <span id="organ-badge" class="focus-badge">一般器官（腦）</span>
+            <h2 id="organ-focus-title" class="focus-title">減少：氧氣、養分</h2>
+            <p id="organ-focus-desc" class="focus-desc">
+              腦細胞進行呼吸作用消耗「氧氣」與「養分」，並產生「二氧化碳」與「含氮廢物」排入血液，因此靜脈血中氧氣、養分減少。
+            </p>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <!-- ==================== VIEW 3: LYMPHATIC CIRCULATION ==================== -->
+    <div id="view-lymph" class="page-view">
+      <main class="workspace">
+        <!-- Left: Lymphatic Visual Stage -->
+        <section class="stage-panel">
+          <div class="stage-head">
+            <strong>淋巴循環系統演示：血漿 → 組織液 → 淋巴液 → 注入靜脈</strong>
+            <span id="lymph-stage-hint">點選右側「三大構造」、「情境模擬」或「4 步導覽」觀察液體轉換與免疫過濾</span>
+          </div>
+
+          <div class="stage-body">
+            <svg id="lymph-svg" class="stage-svg" viewBox="0 0 920 560" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="lymph-cap-grad" gradientUnits="userSpaceOnUse" x1="28" y1="0" x2="500" y2="0">
+                  <stop offset="0%" stop-color="#dc2626" />
+                  <stop offset="100%" stop-color="#7c3aed" />
+                </linearGradient>
+                <linearGradient id="lymph-vein-grad" gradientUnits="userSpaceOnUse" x1="485" y1="0" x2="892" y2="0">
+                  <stop offset="0%" stop-color="#4338ca" />
+                  <stop offset="30%" stop-color="#1d4ed8" />
+                  <stop offset="100%" stop-color="#1e40af" />
+                </linearGradient>
+              </defs>
+
+              <!-- 1. TOP BLOOD VESSEL: 組織微血管(較細) -> 大靜脈(較粗) -->
+              <g id="lymph-blood-vessel">
+                <!-- 組織微血管 (left, thinner) -->
+                <rect x="28" y="76" width="472" height="40" rx="18" fill="url(#lymph-cap-grad)" stroke="#f87171" stroke-width="2.5" opacity="0.92" />
+                <!-- 大靜脈 (right, wider) -->
+                <rect x="488" y="66" width="404" height="58" rx="22" fill="url(#lymph-vein-grad)" stroke="#93c5fd" stroke-width="3" opacity="0.95" />
+                <!-- Capillary pore dashed line (plasma seepage zone) -->
+                <line x1="110" y1="116" x2="435" y2="116" stroke="#fde047" stroke-width="4" stroke-dasharray="9 7" />
+
+                <text x="240" y="54" font-size="18" font-weight="800" text-anchor="middle" fill="#fca5a5">組織微血管（血漿 ＋ 紅血球 ＋ 白血球）</text>
+                <text x="690" y="50" font-size="18" font-weight="800" text-anchor="middle" fill="#93c5fd">大靜脈（淋巴液注入 → 變回血漿）</text>
+                <text x="72" y="102" font-size="15" font-weight="800" fill="#ffffff">血液 →</text>
+                <text x="822" y="101" font-size="16" font-weight="800" text-anchor="middle" fill="#dbeafe">→ 回右心房</text>
+              </g>
+
+              <!-- 2. MIDDLE TISSUE FLUID ZONE -->
+              <g id="lymph-tissue-zone">
+                <rect id="tissue-bg-rect" x="70" y="148" width="440" height="164" rx="22" fill="rgba(56, 189, 248, 0.08)" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6 6" />
+                <text x="290" y="176" font-size="17" font-weight="800" text-anchor="middle" fill="#7dd3fc">組織間隙：組織液（含滲出的血漿與白血球）</text>
+
+                <!-- Tissue Cells -->
+                <g opacity="0.88">
+                  <rect x="96" y="194" width="84" height="48" rx="16" fill="#334155" stroke="#64748b" stroke-width="2" />
+                  <circle cx="138" cy="218" r="10" fill="#475569" />
+                  <text x="138" y="260" font-size="14" font-weight="700" text-anchor="middle" fill="#cbd5e1">組織細胞</text>
+
+                  <rect x="210" y="194" width="84" height="48" rx="16" fill="#334155" stroke="#64748b" stroke-width="2" />
+                  <circle cx="252" cy="218" r="10" fill="#475569" />
+
+                  <rect x="324" y="194" width="84" height="48" rx="16" fill="#334155" stroke="#64748b" stroke-width="2" />
+                  <circle cx="366" cy="218" r="10" fill="#475569" />
+                </g>
+
+                <!-- Seepage Arrows (Emphasize WBC + Plasma vs RBC) -->
+                <text x="182" y="138" font-size="15" font-weight="800" text-anchor="middle" fill="#fde047">↓ 血漿 ＋ 白血球變形滲出</text>
+                <text x="392" y="138" font-size="15" font-weight="800" text-anchor="middle" fill="#fca5a5">✕ 紅血球無法穿出</text>
+                <text x="278" y="302" font-size="15" font-weight="800" fill="#4ade80">↓ 組織液與白血球進入微淋管</text>
+
+                <!-- Edema Alert Badge (hidden unless blocked) -->
+                <g id="edema-alert" style="display:none;">
+                  <rect x="115" y="256" width="350" height="40" rx="10" fill="rgba(234, 88, 12, 0.92)" stroke="#fed7aa" stroke-width="2.5" />
+                  <text x="290" y="282" font-size="17" font-weight="900" text-anchor="middle" fill="#ffffff">⚠ 淋巴管阻塞 → 組織液堆積（水腫）</text>
+                </g>
+              </g>
+
+              <!-- 3. BLIND-ENDED LYMPH CAPILLARY (2 BRANCHES) -> LYMPHATIC VESSEL -> VEIN -->
+              <g id="lymph-vessel-group" class="clickable-node" data-lymphinfo="vessel">
+                <!-- Two thinner blind-ended micro-lymphatic branches merging at (295, 385) -->
+                <path id="path-lymph-branch-1"
+                  d="M 190 342 C 238 342, 260 385, 295 385"
+                  fill="none" stroke="#15803d" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" opacity="0.92" />
+                <path
+                  d="M 190 342 C 238 342, 260 385, 295 385"
+                  fill="none" stroke="#4ade80" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.22" />
+
+                <path id="path-lymph-branch-2"
+                  d="M 190 428 C 238 428, 260 385, 295 385"
+                  fill="none" stroke="#15803d" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" opacity="0.92" />
+                <path
+                  d="M 190 428 C 238 428, 260 385, 295 385"
+                  fill="none" stroke="#4ade80" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.22" />
+
+                <!-- Outer Merged Lymphatic Tube (Junction at x=295, y=385 -> right -> up into 大靜脈 at x=680, y=106) -->
+                <path id="path-lymph-main"
+                  d="M 295 385 L 635 385 C 680 385, 680 350, 680 310 L 680 106"
+                  fill="none" stroke="#15803d" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" opacity="0.92" />
+                <path
+                  d="M 295 385 L 635 385 C 680 385, 680 350, 680 310 L 680 106"
+                  fill="none" stroke="#4ade80" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" opacity="0.22" />
+
+                <!-- Junction highlight where Lymphatic Vessel empties into 大靜脈 -->
+                <ellipse cx="680" cy="122" rx="22" ry="7" fill="#4ade80" opacity="0.55" />
+                <text x="680" y="150" font-size="14" font-weight="800" text-anchor="middle" fill="#86efac">注入大靜脈 ↑</text>
+
+                <!-- Blind-end cap visual markers for both branches -->
+                <circle cx="190" cy="342" r="11" fill="none" stroke="#86efac" stroke-width="2.6" stroke-dasharray="4 3" />
+                <circle cx="190" cy="428" r="11" fill="none" stroke="#86efac" stroke-width="2.6" stroke-dasharray="4 3" />
+                <text x="98" y="378" font-size="16" font-weight="800" text-anchor="middle" fill="#86efac">微淋管（盲端）</text>
+                <text x="98" y="400" font-size="14" font-weight="700" text-anchor="middle" fill="#bbf7d0">兩分支匯入 →</text>
+
+                <!-- Blockage Gate (hidden unless blocked) -->
+                <rect id="lymph-block-gate" x="312" y="356" width="16" height="58" rx="4" fill="#ef4444" stroke="#ffffff" stroke-width="2" style="display:none;" />
+
+                <!-- Valves inside Lymphatic Vessel (防止逆流) -->
+                <g id="lymph-valves-group">
+                  <polygon points="368,366 388,385 368,404 376,385" fill="#facc15" stroke="#854d0e" stroke-width="2" />
+                  <polygon points="661,248 680,228 699,248 680,240" fill="#facc15" stroke="#854d0e" stroke-width="2" />
+                  <rect x="278" y="432" width="166" height="32" rx="8" fill="#facc15" stroke="#854d0e" stroke-width="2" />
+                  <text x="361" y="454" font-size="14" font-weight="900" text-anchor="middle" fill="#422006">瓣膜（防淋巴液逆流）</text>
+                </g>
+
+                <text x="774" y="242" font-size="17" font-weight="800" text-anchor="middle" fill="#4ade80">淋巴管 ↑</text>
+                <text x="774" y="264" font-size="14" font-weight="700" text-anchor="middle" fill="#bbf7d0">單向注入靜脈</text>
+              </g>
+
+              <!-- 4. LYMPH NODE (過濾病原體・白血球聚集) -->
+              <g id="lymph-node-group" class="clickable-node" data-lymphinfo="node">
+                <ellipse id="lymph-node-body" cx="540" cy="385" rx="68" ry="44" fill="#064e3b" stroke="#34d399" stroke-width="4" />
+                <!-- White Blood Cells inside Lymph Node -->
+                <circle cx="510" cy="372" r="11" fill="#f8fafc" stroke="#38bdf8" stroke-width="2.5" />
+                <circle cx="542" cy="396" r="12" fill="#f8fafc" stroke="#38bdf8" stroke-width="2.5" />
+                <circle cx="570" cy="374" r="11" fill="#f8fafc" stroke="#38bdf8" stroke-width="2.5" />
+                <text x="540" y="328" font-size="18" font-weight="800" text-anchor="middle" fill="#34d399">淋巴結（含白血球）</text>
+                <text id="lymph-node-status" x="540" y="454" font-size="15" font-weight="800" text-anchor="middle" fill="#a7f3d0">過濾異物與病原體</text>
+              </g>
+
+              <!-- Animated Lymph Particles Layer -->
+              <g id="lymph-particles-layer"></g>
+
+              <!-- 5. BOTTOM 4-BOX FLOWCHAIN (MATCHING HANDOUT DIAGRAM) -->
+              <g id="lymph-flowchain">
+                <g id="lc-step-0" class="clickable-node" data-lymphinfo="plasma">
+                  <rect x="44" y="486" width="150" height="54" rx="10" fill="#7f1d1d" stroke="#f87171" stroke-width="2.5" />
+                  <text x="119" y="519" font-size="20" font-weight="800" text-anchor="middle" fill="#ffffff">血漿</text>
+                </g>
+                <text x="242" y="505" font-size="13" font-weight="700" text-anchor="middle" fill="#fde047">微血管滲出</text>
+                <text x="242" y="525" font-size="20" font-weight="900" text-anchor="middle" fill="#fde047">→</text>
+
+                <g id="lc-step-1" class="clickable-node" data-lymphinfo="tissue">
+                  <rect x="290" y="486" width="156" height="54" rx="10" fill="#075985" stroke="#38bdf8" stroke-width="2.5" />
+                  <text x="368" y="519" font-size="20" font-weight="800" text-anchor="middle" fill="#ffffff">組織液</text>
+                </g>
+                <text x="496" y="505" font-size="13" font-weight="700" text-anchor="middle" fill="#4ade80">滲入微淋管</text>
+                <text x="496" y="525" font-size="20" font-weight="900" text-anchor="middle" fill="#4ade80">→</text>
+
+                <g id="lc-step-2" class="clickable-node" data-lymphinfo="liquid">
+                  <rect x="546" y="486" width="166" height="54" rx="10" fill="#14532d" stroke="#4ade80" stroke-width="2.5" />
+                  <text x="629" y="519" font-size="20" font-weight="800" text-anchor="middle" fill="#ffffff">淋巴液(淋巴)</text>
+                </g>
+                <text x="760" y="505" font-size="13" font-weight="700" text-anchor="middle" fill="#93c5fd">注入靜脈</text>
+                <text x="760" y="525" font-size="20" font-weight="900" text-anchor="middle" fill="#93c5fd">→</text>
+
+                <g id="lc-step-3" class="clickable-node" data-lymphinfo="vein-return">
+                  <rect x="802" y="486" width="92" height="54" rx="10" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2.5" />
+                  <text x="848" y="519" font-size="19" font-weight="800" text-anchor="middle" fill="#ffffff">靜脈血漿</text>
+                </g>
+              </g>
+            </svg>
+          </div>
+        </section>
+
+        <!-- Right: Lymphatic Control Panel -->
+        <aside class="control-panel">
+          <div>
+            <div class="panel-section-title">淋巴系統三大構造</div>
+            <div class="cat-grid">
+              <button data-lymphinfo="liquid" class="cat-btn lymph-struct-btn">
+                <span>① 淋巴液</span>
+                <span>組織液滲入</span>
+              </button>
+              <button data-lymphinfo="vessel" class="cat-btn lymph-struct-btn">
+                <span>② 淋巴管</span>
+                <span>具瓣膜防逆流</span>
+              </button>
+              <button data-lymphinfo="node" class="cat-btn lymph-struct-btn">
+                <span>③ 淋巴結</span>
+                <span>白血球過濾</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="panel-section-title">課堂情境模擬</div>
+            <div class="cat-grid">
+              <button id="btn-toggle-pathogen" class="cat-btn">
+                <span>🦠 投入病原體（免疫過濾）</span>
+                <span id="pathogen-state-lbl">關閉</span>
+              </button>
+              <button id="btn-toggle-edema" class="cat-btn">
+                <span>💧 淋巴管阻塞（水腫模擬）</span>
+                <span id="edema-state-lbl">關閉</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="focus-card">
+            <span id="lymph-badge" class="focus-badge">淋巴循環總覽</span>
+            <h2 id="lymph-focus-title" class="focus-title">血漿 → 組織液 → 淋巴液 → 靜脈</h2>
+            <p id="lymph-focus-desc" class="focus-desc">
+              血漿從微血管滲出後稱為「組織液」；組織液滲入盲端微淋管後稱為「淋巴液」，經淋巴結過濾病原體後注入大靜脈變回血漿。
+            </p>
+          </div>
+
+          <div class="step-box">
+            <div class="panel-section-title" style="margin-bottom: 0;">淋巴循環 4 步驟導覽</div>
+            <div class="step-row">
+              <button id="btn-lymph-prev" class="step-btn">← 上一步</button>
+              <span id="lymph-step-counter" class="step-counter">待命</span>
+              <button id="btn-lymph-next" class="step-btn primary">下一步 →</button>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <!-- ==================== VIEW 4: VESSEL STRUCTURE COMPARISON ==================== -->
+    <div id="view-vessels" class="page-view">
+      <main class="workspace">
+        <!-- Left: Cross-Section & Longitudinal Vessel Comparison SVG -->
+        <section class="stage-panel">
+          <div class="stage-head">
+            <strong>血管構造比較剖面圖：動脈 vs 靜脈 vs 微血管</strong>
+            <span>左：橫切面（看管壁厚度與管腔寬度）｜右：縱切面（看瓣膜、彈性搏動與流速）</span>
+          </div>
+          <div class="stage-body">
+            <svg id="vessels-svg" class="stage-svg" viewBox="0 0 920 560" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <clipPath id="clip-art-long">
+                  <rect x="415" y="96" width="320" height="56" rx="4" />
+                </clipPath>
+                <clipPath id="clip-vein-long">
+                  <rect x="415" y="252" width="320" height="84" rx="4" />
+                </clipPath>
+                <clipPath id="clip-cap-long">
+                  <rect x="415" y="449" width="320" height="30" rx="4" />
+                </clipPath>
+              </defs>
+
+              <!-- Column Headers -->
+              <text x="82" y="26" font-size="16" font-weight="800" text-anchor="middle" fill="#94a3b8">血管種類</text>
+              <text x="272" y="26" font-size="16" font-weight="800" text-anchor="middle" fill="#93c5fd">橫切面剖面圖（壁厚 vs 寬度）</text>
+              <text x="575" y="26" font-size="16" font-weight="800" text-anchor="middle" fill="#93c5fd">縱切面剖面圖（彈性、流速與瓣膜）</text>
+              <text x="828" y="26" font-size="16" font-weight="800" text-anchor="middle" fill="#fbbf24">目前指標比較</text>
+
+              <!-- ==================== ROW 1: ARTERY (動脈) ==================== -->
+              <g id="vessel-row-art" class="clickable-node" data-vessel="art">
+                <rect x="12" y="42" width="896" height="162" rx="14" fill="#0b1222" stroke="#7f1d1d" stroke-width="2" />
+
+                <!-- Col 1: Name -->
+                <rect x="22" y="54" width="126" height="138" rx="10" fill="rgba(185,28,28,0.16)" stroke="rgba(239,68,68,0.45)" stroke-width="1.5" />
+                <text x="85" y="98" font-size="28" font-weight="900" text-anchor="middle" fill="#fca5a5">動脈</text>
+                <text x="85" y="124" font-size="14" font-weight="700" text-anchor="middle" fill="#fecaca">血液離心・高壓</text>
+                <g class="v-part" data-parts="elasticity valve">
+                  <rect x="34" y="142" width="102" height="28" rx="6" fill="#7f1d1d" stroke="#ef4444" stroke-width="1" />
+                  <text x="85" y="161" font-size="13" font-weight="800" text-anchor="middle" fill="#fef2f2">彈性最好・無瓣膜</text>
+                </g>
+
+                <!-- Col 2: Cross-section (壁最厚・寬次之) -->
+                <g transform="translate(232, 123)">
+                  <g id="vessel-art-cross-pulse">
+                    <!-- Wall & elastic muscle layer -->
+                    <g class="v-part" data-parts="wall elasticity">
+                      <circle r="56" fill="#7f1d1d" stroke="#ef4444" stroke-width="2.5" />
+                      <circle r="44" fill="#b91c1c" stroke="#fca5a5" stroke-width="2" stroke-dasharray="7 4" opacity="0.82" />
+                      <!-- Wall thickness dimension bracket -->
+                      <line x1="23" y1="0" x2="56" y2="0" stroke="#facc15" stroke-width="3" />
+                      <circle cx="23" cy="0" r="2.8" fill="#facc15" />
+                      <circle cx="56" cy="0" r="2.8" fill="#facc15" />
+                    </g>
+                    <!-- Inner lumen & width diameter guide -->
+                    <g class="v-part" data-parts="width speed pressure">
+                      <circle r="23" fill="#450a0a" stroke="#fecaca" stroke-width="2" />
+                      <circle r="21" fill="#ef4444" opacity="0.34" />
+                      <ellipse cx="-6" cy="-5" rx="6.5" ry="4" fill="#ef4444" stroke="#fecaca" stroke-width="1" />
+                      <ellipse cx="7" cy="5" rx="6.5" ry="4" fill="#ef4444" stroke="#fecaca" stroke-width="1" />
+                      <line class="v-part v-width-guide" data-parts="width" x1="-20" y1="0" x2="20" y2="0" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="3 2" />
+                    </g>
+                  </g>
+                </g>
+                <g class="v-part" data-parts="wall elasticity">
+                  <text x="344" y="106" font-size="15" font-weight="800" text-anchor="middle" fill="#facc15">管壁：最厚</text>
+                  <text x="344" y="128" font-size="13" font-weight="700" text-anchor="middle" fill="#fca5a5">(厚肌肉＋彈性纖維)</text>
+                </g>
+                <text class="v-part" data-parts="width" x="344" y="152" font-size="15" font-weight="800" text-anchor="middle" fill="#38bdf8">寬度：次之</text>
+
+                <!-- Col 3: Longitudinal section -->
+                <g id="vessel-art-long">
+                  <!-- Top & bottom thick walls -->
+                  <g class="v-part" data-parts="wall elasticity">
+                    <rect id="art-wall-top" x="415" y="70" width="320" height="26" rx="4" fill="#b91c1c" stroke="#ef4444" stroke-width="2" />
+                    <line x1="422" y1="74" x2="728" y2="74" stroke="#fca5a5" stroke-width="1.3" stroke-dasharray="10 6" opacity="0.55" />
+                    <text x="575" y="90" font-size="13" font-weight="800" text-anchor="middle" fill="#fef2f2">厚實彈性管壁（隨心搏彈性擴張與回彈）</text>
+
+                    <rect id="art-wall-bot" x="415" y="152" width="320" height="26" rx="4" fill="#b91c1c" stroke="#ef4444" stroke-width="2" />
+                    <line x1="422" y1="174" x2="728" y2="174" stroke="#fca5a5" stroke-width="1.3" stroke-dasharray="10 6" opacity="0.55" />
+                  </g>
+                  <!-- Lumen & flowing fast RBCs -->
+                  <g class="v-part" data-parts="width speed pressure">
+                    <rect x="415" y="96" width="320" height="56" fill="#3b0707" />
+                    <line class="v-part v-width-guide" data-parts="width" x1="442" y1="98" x2="442" y2="150" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="4 3" />
+                    <g id="vessel-art-rbcs" clip-path="url(#clip-art-long)"></g>
+                  </g>
+                  <g class="v-part" data-parts="speed pressure valve">
+                    <text x="575" y="169" font-size="13" font-weight="800" text-anchor="middle" fill="#fef2f2">無瓣膜｜血壓最大・流速最快 →</text>
+                  </g>
+                </g>
+
+                <!-- Col 4: Live Metric Meter -->
+                <g class="v-part" data-parts="wall width elasticity speed pressure valve">
+                  <rect x="752" y="54" width="144" height="138" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
+                  <text id="art-svg-metric-title" x="824" y="82" font-size="14" font-weight="800" text-anchor="middle" fill="#94a3b8">綜合指標</text>
+                  <text id="art-svg-metric-val" x="824" y="122" font-size="18" font-weight="900" text-anchor="middle" fill="#fca5a5">壁最厚・壓最大</text>
+                  <rect x="768" y="140" width="112" height="12" rx="6" fill="#1e293b" />
+                  <rect id="art-svg-metric-bar" x="768" y="140" width="112" height="12" rx="6" fill="#ef4444" />
+                  <text id="art-svg-metric-sub" x="824" y="176" font-size="13" font-weight="700" text-anchor="middle" fill="#cbd5e1">寬次之｜無瓣膜</text>
+                </g>
+              </g>
+
+              <!-- ==================== ROW 2: VEIN (靜脈) ==================== -->
+              <g id="vessel-row-vein" class="clickable-node" data-vessel="vein">
+                <rect x="12" y="212" width="896" height="162" rx="14" fill="#0b1222" stroke="#1e3a8a" stroke-width="2" />
+
+                <!-- Col 1: Name -->
+                <rect x="22" y="224" width="126" height="138" rx="10" fill="rgba(29,78,216,0.16)" stroke="rgba(59,130,246,0.45)" stroke-width="1.5" />
+                <text x="85" y="268" font-size="28" font-weight="900" text-anchor="middle" fill="#93c5fd">靜脈</text>
+                <text x="85" y="294" font-size="14" font-weight="700" text-anchor="middle" fill="#bfdbfe">血液回心・低壓</text>
+                <g class="v-part" data-parts="width valve">
+                  <rect x="34" y="312" width="102" height="28" rx="6" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1" />
+                  <text x="85" y="331" font-size="13" font-weight="800" text-anchor="middle" fill="#eff6ff">寬度最寬・有瓣膜</text>
+                </g>
+
+                <!-- Col 2: Cross-section (壁次之・寬最寬) -->
+                <g transform="translate(232, 293)">
+                  <!-- Thinner wall ring -->
+                  <g class="v-part" data-parts="wall elasticity">
+                    <circle r="56" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2.5" />
+                    <line x1="41" y1="0" x2="56" y2="0" stroke="#facc15" stroke-width="3" />
+                    <circle cx="41" cy="0" r="2.8" fill="#facc15" />
+                    <circle cx="56" cy="0" r="2.8" fill="#facc15" />
+                  </g>
+                  <!-- Widest lumen -->
+                  <g class="v-part" data-parts="width speed pressure">
+                    <circle r="43" fill="#0f172a" stroke="#bfdbfe" stroke-width="2" />
+                    <circle r="41" fill="#2563eb" opacity="0.28" />
+                    <ellipse cx="-14" cy="-12" rx="6.5" ry="4" fill="#ef4444" stroke="#fecaca" stroke-width="1" />
+                    <ellipse cx="14" cy="-10" rx="6.5" ry="4" fill="#ef4444" stroke="#fecaca" stroke-width="1" />
+                    <ellipse cx="-8" cy="14" rx="6.5" ry="4" fill="#ef4444" stroke="#fecaca" stroke-width="1" />
+                    <ellipse cx="16" cy="12" rx="6.5" ry="4" fill="#ef4444" stroke="#fecaca" stroke-width="1" />
+                    <line class="v-part v-width-guide" data-parts="width" x1="-39" y1="0" x2="39" y2="0" stroke="#38bdf8" stroke-width="2.8" stroke-dasharray="4 2" />
+                  </g>
+                </g>
+                <g class="v-part" data-parts="wall elasticity">
+                  <text x="344" y="276" font-size="15" font-weight="800" text-anchor="middle" fill="#e2e8f0">管壁：次之</text>
+                  <text x="344" y="298" font-size="13" font-weight="700" text-anchor="middle" fill="#93c5fd">(平滑肌層較動脈薄)</text>
+                </g>
+                <text class="v-part" data-parts="width" x="344" y="322" font-size="15" font-weight="800" text-anchor="middle" fill="#38bdf8">寬度：最寬</text>
+
+                <!-- Col 3: Longitudinal section with animated valves -->
+                <g id="vessel-vein-long">
+                  <g class="v-part" data-parts="wall elasticity">
+                    <rect x="415" y="238" width="320" height="14" rx="3" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2" />
+                    <rect x="415" y="336" width="320" height="14" rx="3" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2" />
+                  </g>
+
+                  <g class="v-part" data-parts="width speed pressure">
+                    <rect x="415" y="252" width="320" height="84" fill="#08142c" />
+                    <line class="v-part v-width-guide" data-parts="width" x1="442" y1="254" x2="442" y2="334" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="4 3" />
+                    <g id="vessel-vein-rbcs" clip-path="url(#clip-vein-long)"></g>
+                  </g>
+
+                  <!-- Two interactive Vein Valves (瓣膜) -->
+                  <g id="vein-valve-group" class="v-part" data-parts="valve">
+                    <path id="vein-v1-top" d="M 488 252 Q 505 268 516 278" fill="none" stroke="#facc15" stroke-width="5.5" stroke-linecap="round" />
+                    <path id="vein-v1-bot" d="M 488 336 Q 505 320 516 310" fill="none" stroke="#facc15" stroke-width="5.5" stroke-linecap="round" />
+                    <path id="vein-v2-top" d="M 622 252 Q 639 268 650 278" fill="none" stroke="#facc15" stroke-width="5.5" stroke-linecap="round" />
+                    <path id="vein-v2-bot" d="M 622 336 Q 639 320 650 310" fill="none" stroke="#facc15" stroke-width="5.5" stroke-linecap="round" />
+                    <rect x="478" y="220" width="96" height="20" rx="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+                    <text x="526" y="235" font-size="12" font-weight="900" text-anchor="middle" fill="#422006">靜脈瓣膜</text>
+                  </g>
+
+                  <!-- Reverse-flow blocked alert (hidden unless reverseTest active) -->
+                  <g id="vein-valve-alert" style="display:none;">
+                    <rect x="466" y="280" width="218" height="28" rx="7" fill="rgba(220,38,38,0.92)" stroke="#fef08a" stroke-width="2" />
+                    <text x="575" y="299" font-size="13" font-weight="900" text-anchor="middle" fill="#ffffff">🔒 瓣膜閉合！阻擋血液逆流</text>
+                  </g>
+
+                  <g class="v-part" data-parts="speed pressure valve">
+                    <text x="575" y="366" font-size="13" font-weight="800" text-anchor="middle" fill="#bfdbfe">有瓣膜防止血液逆流｜血壓最小（比微血管小）｜流速次之 →</text>
+                  </g>
+                </g>
+
+                <!-- Col 4: Live Metric Meter -->
+                <g class="v-part" data-parts="wall width elasticity speed pressure valve">
+                  <rect x="752" y="224" width="144" height="138" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
+                  <text id="vein-svg-metric-title" x="824" y="252" font-size="14" font-weight="800" text-anchor="middle" fill="#94a3b8">綜合指標</text>
+                  <text id="vein-svg-metric-val" x="824" y="292" font-size="18" font-weight="900" text-anchor="middle" fill="#93c5fd">寬最寬・有瓣膜</text>
+                  <rect x="768" y="310" width="112" height="12" rx="6" fill="#1e293b" />
+                  <rect id="vein-svg-metric-bar" x="768" y="310" width="84" height="12" rx="6" fill="#3b82f6" />
+                  <text id="vein-svg-metric-sub" x="824" y="346" font-size="13" font-weight="700" text-anchor="middle" fill="#cbd5e1">壁次之｜壓最小</text>
+                </g>
+              </g>
+
+              <!-- ==================== ROW 3: CAPILLARY (微血管) ==================== -->
+              <g id="vessel-row-cap" class="clickable-node" data-vessel="cap">
+                <rect x="12" y="382" width="896" height="162" rx="14" fill="#0b1222" stroke="#581c87" stroke-width="2" />
+
+                <!-- Col 1: Name -->
+                <rect x="22" y="394" width="126" height="138" rx="10" fill="rgba(147,51,234,0.16)" stroke="rgba(192,132,252,0.45)" stroke-width="1.5" />
+                <text x="85" y="438" font-size="28" font-weight="900" text-anchor="middle" fill="#d8b4fe">微血管</text>
+                <text x="85" y="464" font-size="14" font-weight="700" text-anchor="middle" fill="#e9d5ff">物質交換場所</text>
+                <g class="v-part" data-parts="wall width">
+                  <rect x="34" y="482" width="102" height="28" rx="6" fill="#581c87" stroke="#a855f7" stroke-width="1" />
+                  <text x="85" y="501" font-size="13" font-weight="800" text-anchor="middle" fill="#faf5ff">壁最薄・寬最窄</text>
+                </g>
+
+                <!-- Col 2: Cross-section (壁最薄：單層細胞・寬最窄：容單列紅血球) -->
+                <g transform="translate(232, 463)">
+                  <!-- Outer ghost reference of Artery/Vein diameter -->
+                  <circle class="v-part" data-parts="width" r="54" fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="4 4" />
+                  <text class="v-part" data-parts="width" x="0" y="-42" font-size="11" font-weight="700" text-anchor="middle" fill="#64748b">對比動靜脈外徑</text>
+                  <!-- True ultra-narrow single-cell wall -->
+                  <circle class="v-part" data-parts="wall" r="19" fill="#2e1065" stroke="#e9d5ff" stroke-width="4.5" stroke-dasharray="10 3" />
+                  <g class="v-part" data-parts="width speed pressure">
+                    <circle r="14" fill="#4c1d95" opacity="0.48" />
+                    <ellipse cx="0" cy="0" rx="9" ry="5.5" fill="#ef4444" stroke="#fecaca" stroke-width="1.2" />
+                    <line class="v-part v-width-guide" data-parts="width" x1="-13" y1="0" x2="13" y2="0" stroke="#38bdf8" stroke-width="2" stroke-dasharray="2 2" />
+                  </g>
+                </g>
+                <g class="v-part" data-parts="wall">
+                  <text x="344" y="444" font-size="15" font-weight="800" text-anchor="middle" fill="#d8b4fe">管壁：最薄</text>
+                  <text x="344" y="466" font-size="13" font-weight="700" text-anchor="middle" fill="#e9d5ff">(僅由單層細胞組成)</text>
+                </g>
+                <g class="v-part" data-parts="width">
+                  <text x="344" y="490" font-size="15" font-weight="800" text-anchor="middle" fill="#facc15">寬度：最窄</text>
+                  <text x="344" y="510" font-size="12" font-weight="700" text-anchor="middle" fill="#cbd5e1">(僅容單一紅血球通過)</text>
+                </g>
+
+                <!-- Col 3: Longitudinal section (single-cell beaded wall + single-file slow RBCs + exchange) -->
+                <g id="vessel-cap-long">
+                  <g class="v-part" data-parts="width speed pressure">
+                    <rect x="415" y="449" width="320" height="30" fill="#240b47" />
+                    <line class="v-part v-width-guide" data-parts="width" x1="442" y1="450" x2="442" y2="478" stroke="#38bdf8" stroke-width="2.5" />
+                    <!-- Single-file slow RBCs -->
+                    <g id="vessel-cap-rbcs" clip-path="url(#clip-cap-long)"></g>
+                  </g>
+                  <!-- Top & bottom single-layer endothelial cell wall segments -->
+                  <g class="v-part" data-parts="wall" fill="#7e22ce" stroke="#e9d5ff" stroke-width="1.5">
+                    <rect x="416" y="441" width="36" height="8" rx="3" />
+                    <rect x="456" y="441" width="36" height="8" rx="3" />
+                    <rect x="496" y="441" width="36" height="8" rx="3" />
+                    <rect x="536" y="441" width="36" height="8" rx="3" />
+                    <rect x="576" y="441" width="36" height="8" rx="3" />
+                    <rect x="616" y="441" width="36" height="8" rx="3" />
+                    <rect x="656" y="441" width="36" height="8" rx="3" />
+                    <rect x="696" y="441" width="36" height="8" rx="3" />
+
+                    <rect x="416" y="479" width="36" height="8" rx="3" />
+                    <rect x="456" y="479" width="36" height="8" rx="3" />
+                    <rect x="496" y="479" width="36" height="8" rx="3" />
+                    <rect x="536" y="479" width="36" height="8" rx="3" />
+                    <rect x="576" y="479" width="36" height="8" rx="3" />
+                    <rect x="616" y="479" width="36" height="8" rx="3" />
+                    <rect x="656" y="479" width="36" height="8" rx="3" />
+                    <rect x="696" y="479" width="36" height="8" rx="3" />
+                  </g>
+
+                  <!-- Exchange arrows across 1-cell wall -->
+                  <text class="v-part" data-parts="wall speed" x="575" y="425" font-size="13" font-weight="800" text-anchor="middle" fill="#4ade80">↑↓ 單層細胞壁利於物質交換（O₂・養分出 / CO₂・廢物入）</text>
+                  <text class="v-part" data-parts="speed pressure valve" x="575" y="514" font-size="13" font-weight="800" text-anchor="middle" fill="#e9d5ff">無瓣膜｜紅血球單列緩慢通過（流速最慢）｜血壓次之</text>
+                </g>
+
+                <!-- Col 4: Live Metric Meter -->
+                <g class="v-part" data-parts="wall width elasticity speed pressure valve">
+                  <rect x="752" y="394" width="144" height="138" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
+                  <text id="cap-svg-metric-title" x="824" y="422" font-size="14" font-weight="800" text-anchor="middle" fill="#94a3b8">綜合指標</text>
+                  <text id="cap-svg-metric-val" x="824" y="462" font-size="18" font-weight="900" text-anchor="middle" fill="#d8b4fe">壁最薄・速最慢</text>
+                  <rect x="768" y="480" width="112" height="12" rx="6" fill="#1e293b" />
+                  <rect id="cap-svg-metric-bar" x="768" y="480" width="24" height="12" rx="6" fill="#a855f7" />
+                  <text id="cap-svg-metric-sub" x="824" y="516" font-size="13" font-weight="700" text-anchor="middle" fill="#cbd5e1">壓次之｜無瓣膜</text>
+                </g>
+              </g>
+            </svg>
+          </div>
+        </section>
+
+        <!-- Right: Metric Comparison Control Panel -->
+        <aside class="control-panel">
+          <div>
+            <div class="panel-section-title">選擇比較指標（對應課本表格）</div>
+            <div class="metric-grid">
+              <button data-metric="overview" class="metric-btn full-span active">
+                <span>📊 六大指標總覽對照</span>
+              </button>
+              <button data-metric="wall" class="metric-btn">
+                <span>管壁厚度</span><span>動＞靜＞微</span>
+              </button>
+              <button data-metric="width" class="metric-btn">
+                <span>血管寬度</span><span>靜＞動＞微</span>
+              </button>
+              <button data-metric="elasticity" class="metric-btn">
+                <span>彈性大小</span><span>動＞靜＞微</span>
+              </button>
+              <button data-metric="speed" class="metric-btn">
+                <span>血液流速</span><span>動＞靜＞微</span>
+              </button>
+              <button data-metric="pressure" class="metric-btn">
+                <span>血壓大小</span><span>動＞微＞靜</span>
+              </button>
+              <button data-metric="valve" class="metric-btn">
+                <span>瓣膜有無</span><span>僅靜脈有</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="panel-section-title">靜脈瓣膜功能實測</div>
+            <button id="btn-toggle-reverse" class="cat-btn" style="padding: 8px 12px; font-size: clamp(14px, 1vw, 17px);">
+              <span>🔁 模擬血液逆流測試瓣膜</span>
+              <span id="reverse-state-lbl">關閉</span>
+            </button>
+          </div>
+
+          <div class="focus-card">
+            <span id="vessel-badge" class="focus-badge">六大指標總覽</span>
+            <h2 id="vessel-focus-title" class="focus-title">動脈 vs 靜脈 vs 微血管 比較</h2>
+
+            <!-- Dynamic Visual Ranking Bars -->
+            <div id="vessel-bars-container" class="vessel-bar-list"></div>
+
+            <p id="vessel-focus-desc" class="focus-desc" style="margin-top: 4px;">
+              點選上方任一指標（特別留意「血壓：動脈＞微血管＞靜脈」常考觀念），即可從剖面圖與長條圖直觀比較三種血管差異。
+            </p>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <!-- ==================== VIEW 5: BLOOD COMPONENTS & FUNCTIONS ==================== -->
+    <div id="view-blood" class="page-view">
+      <main class="workspace">
+        <!-- Left: Blood Composition + Bloodstream Transport + 4 Component Cards -->
+        <section class="stage-panel">
+          <div class="stage-head">
+            <strong>血液組成可視化：血液 ＝ 血漿 ＋ 血球（紅血球・白血球・血小板）</strong>
+            <span>重點：血漿運 CO₂／養分／廢物；紅血球運 O₂ 但最愛「一氧化碳 (CO)」</span>
+          </div>
+          <div class="stage-body">
+            <svg id="blood-svg" class="stage-svg" viewBox="0 0 920 560" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <clipPath id="clip-blood-stream">
+                  <rect x="262" y="42" width="630" height="266" rx="6" />
+                </clipPath>
+              </defs>
+
+              <!-- ===== LEFT COLUMN: CENTRIFUGE TEST TUBE & CHEAT SUMMARY ===== -->
+              <rect x="14" y="12" width="222" height="536" rx="12" fill="#0b1222" stroke="#334155" stroke-width="2" />
+              <text x="125" y="38" font-size="16" font-weight="900" text-anchor="middle" fill="#f8fafc">離心分層：血液組成比例</text>
+
+              <!-- Centrifuge tube layers -->
+              <g class="clickable-node b-part" data-blood="plasma" data-bloodpart="plasma">
+                <rect x="34" y="56" width="76" height="154" rx="6" fill="rgba(234,179,8,0.68)" stroke="#fde047" stroke-width="2" />
+                <text x="72" y="126" font-size="15" font-weight="900" text-anchor="middle" fill="#fef9c3">血漿</text>
+                <text x="72" y="148" font-size="13" font-weight="800" text-anchor="middle" fill="#fef08a">~55%</text>
+                <!-- Callout on right of tube -->
+                <text x="122" y="78" font-size="14" font-weight="800" fill="#fde047">血漿（液體）</text>
+                <text x="122" y="100" font-size="12" font-weight="700" fill="#fef08a">• 水（最多）</text>
+                <text x="122" y="119" font-size="12" font-weight="700" fill="#fef08a">• 蛋白(抗體/激素)</text>
+                <text x="122" y="138" font-size="12" font-weight="700" fill="#fef08a">• 養分＋廢物</text>
+                <text x="122" y="158" font-size="13" font-weight="900" fill="#38bdf8">★ 運二氧化碳 CO₂</text>
+              </g>
+
+              <g class="clickable-node b-part" data-blood="wbc" data-bloodpart="wbc platelet">
+                <rect x="34" y="210" width="76" height="14" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1" />
+                <text x="122" y="221" font-size="12" font-weight="800" fill="#93c5fd">← 白血球+血小板 (~1%)</text>
+              </g>
+
+              <g class="clickable-node b-part" data-blood="rbc" data-bloodpart="rbc">
+                <rect x="34" y="224" width="76" height="110" rx="8" fill="#b91c1c" stroke="#f87171" stroke-width="2" />
+                <text x="72" y="274" font-size="15" font-weight="900" text-anchor="middle" fill="#fef2f2">紅血球</text>
+                <text x="72" y="295" font-size="13" font-weight="800" text-anchor="middle" fill="#fecaca">~44%</text>
+                <text x="122" y="264" font-size="14" font-weight="800" fill="#fca5a5">血球（細胞）</text>
+                <text x="122" y="285" font-size="12" font-weight="700" fill="#fecaca">數目最多</text>
+                <text x="122" y="305" font-size="12" font-weight="800" fill="#fbbf24">★ 運 O₂ (最愛 CO)</text>
+              </g>
+
+              <!-- Glass tube outline -->
+              <rect x="34" y="54" width="76" height="282" rx="10" fill="none" stroke="#cbd5e1" stroke-width="2.5" />
+
+              <!-- Bottom 3 Comparison Cheat Cards -->
+              <rect x="24" y="352" width="202" height="54" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
+              <text x="125" y="373" font-size="13" font-weight="800" text-anchor="middle" fill="#93c5fd">體積大小比較</text>
+              <text x="125" y="396" font-size="15" font-weight="900" text-anchor="middle" fill="#f8fafc">白血球 ＞ 紅血球 ＞ 血小板</text>
+
+              <rect x="24" y="414" width="202" height="54" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
+              <text x="125" y="435" font-size="13" font-weight="800" text-anchor="middle" fill="#fca5a5">數量多寡比較</text>
+              <text x="125" y="458" font-size="15" font-weight="900" text-anchor="middle" fill="#f8fafc">紅血球 ＞ 血小板 ＞ 白血球</text>
+
+              <rect x="24" y="476" width="202" height="58" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8" />
+              <text x="125" y="498" font-size="13" font-weight="800" text-anchor="middle" fill="#7dd3fc">有無細胞核（能否驗 DNA？）</text>
+              <text x="125" y="522" font-size="15" font-weight="900" text-anchor="middle" fill="#fde047">僅「白血球」有細胞核 ✅</text>
+
+              <!-- ===== TOP RIGHT: ANIMATED BLOODSTREAM ===== -->
+              <rect x="248" y="12" width="658" height="306" rx="12" fill="#0b1222" stroke="#334155" stroke-width="2" />
+              <text x="262" y="36" font-size="15" font-weight="800" fill="#93c5fd">血管內運輸實景：血漿載 CO₂/養分/廢物・紅血球攜 O₂（遇 CO 即被搶奪）</text>
+
+              <!-- Top endothelial wall (with breakable wound slot at x=724..776) -->
+              <g fill="#7e22ce" stroke="#e9d5ff" stroke-width="1.4">
+                <rect x="262" y="52" width="462" height="10" rx="3" />
+                <rect id="blood-wall-wound-patch" x="724" y="52" width="52" height="10" rx="3" />
+                <rect x="776" y="52" width="116" height="10" rx="3" />
+              </g>
+
+              <!-- Flowing Plasma Backdrop -->
+              <rect class="b-part" data-bloodpart="plasma" x="262" y="62" width="630" height="176" fill="rgba(234,179,8,0.14)" />
+
+              <!-- Bottom endothelial wall with WBC pore at x=500..532 -->
+              <g fill="#7e22ce" stroke="#e9d5ff" stroke-width="1.4">
+                <rect x="262" y="238" width="238" height="10" rx="3" />
+                <rect x="532" y="238" width="360" height="10" rx="3" />
+              </g>
+              <text x="516" y="233" font-size="11" font-weight="700" text-anchor="middle" fill="#94a3b8">微血管壁間隙（供白血球變形穿出）</text>
+
+              <!-- Tissue zone under capillary -->
+              <rect x="262" y="248" width="630" height="60" rx="6" fill="rgba(15,23,42,0.85)" />
+              <text x="340" y="284" font-size="13" font-weight="700" text-anchor="middle" fill="#64748b">組織細胞間隙（病原體入侵區）</text>
+
+              <!-- Plasma transport callout banner inside tube -->
+              <g class="b-part" data-bloodpart="plasma">
+                <rect x="274" y="69" width="410" height="26" rx="6" fill="rgba(113,63,18,0.88)" stroke="#facc15" stroke-width="1.5" />
+                <text x="479" y="87" font-size="13" font-weight="800" text-anchor="middle" fill="#fef08a">★ 淡黃色「血漿」直接運送：CO₂、養分、廢物、蛋白質(抗體/激素)</text>
+              </g>
+
+              <!-- Animated particle layers -->
+              <g clip-path="url(#clip-blood-stream)">
+                <g id="blood-plasma-solutes" class="b-part" data-bloodpart="plasma"></g>
+                <g id="blood-rbc-carriers" class="b-part" data-bloodpart="rbc"></g>
+                <g id="blood-wbc-patrol" class="b-part" data-bloodpart="wbc"></g>
+                <g id="blood-pathogens-layer" class="b-part" data-bloodpart="wbc"></g>
+                <g id="blood-platelet-pool" class="b-part" data-bloodpart="platelet"></g>
+              </g>
+
+              <!-- CO Poisoning Alert Banner (hidden unless CO active) -->
+              <g id="blood-co-alert" style="display:none;">
+                <rect x="274" y="202" width="468" height="28" rx="7" fill="rgba(127,29,29,0.94)" stroke="#f43f5e" stroke-width="2" />
+                <text x="508" y="221" font-size="13" font-weight="900" text-anchor="middle" fill="#fef2f2">☠️ 紅血球對 CO（一氧化碳）親和力遠大於 O₂！O₂ 被搶走，導致缺氧中毒</text>
+              </g>
+
+              <!-- Wound Clot Fibrin Mesh (hidden unless wound active) -->
+              <g id="blood-clot-mesh" style="display:none;">
+                <path d="M 724 56 L 776 62 M 726 62 L 774 52 M 736 48 L 762 66 M 762 48 L 736 66" stroke="#fde047" stroke-width="2.6" stroke-linecap="round" />
+                <rect x="640" y="18" width="254" height="26" rx="6" fill="rgba(157,23,77,0.94)" stroke="#f472b6" stroke-width="1.8" />
+                <text x="767" y="36" font-size="12" font-weight="900" text-anchor="middle" fill="#fdf2f8">🩹 血小板釋出凝血物質＋纖維網堵住傷口！</text>
+              </g>
+
+              <!-- ===== BOTTOM RIGHT: 4 COMPONENT FEATURE CARDS ===== -->
+              <!-- Card 1: Plasma -->
+              <g class="clickable-node b-part" data-blood="plasma" data-bloodpart="plasma">
+                <rect x="248" y="330" width="156" height="218" rx="10" fill="#0b1222" stroke="#ca8a04" stroke-width="2" />
+                <rect x="248" y="330" width="156" height="34" rx="10" fill="rgba(202,138,4,0.28)" />
+                <text x="326" y="353" font-size="18" font-weight="900" text-anchor="middle" fill="#fde047">血漿（液態）</text>
+                <!-- Visual icons -->
+                <path d="M 326 374 C 314 390, 312 404, 326 408 C 340 404, 338 390, 326 374 Z" fill="#eab308" stroke="#fef08a" stroke-width="1.5" />
+                <circle cx="290" cy="392" r="9" fill="#06b6d4" /><text x="290" y="396" font-size="9" font-weight="900" text-anchor="middle" fill="#083344">CO₂</text>
+                <circle cx="362" cy="392" r="9" fill="#fb923c" /><text x="362" y="396" font-size="9" font-weight="900" text-anchor="middle" fill="#431407">養分</text>
+                <text x="326" y="432" font-size="13" font-weight="800" text-anchor="middle" fill="#fef08a">主要成分：水 (90%)</text>
+                <text x="326" y="454" font-size="12" font-weight="700" text-anchor="middle" fill="#e2e8f0">蛋白質（抗體＋激素）</text>
+                <text x="326" y="476" font-size="12" font-weight="700" text-anchor="middle" fill="#e2e8f0">養分＋廢物</text>
+                <rect x="258" y="492" width="136" height="44" rx="7" fill="rgba(6,182,212,0.18)" stroke="#38bdf8" stroke-width="1.5" />
+                <text x="326" y="511" font-size="13" font-weight="900" text-anchor="middle" fill="#7dd3fc">★ 重點運送</text>
+                <text x="326" y="529" font-size="13" font-weight="900" text-anchor="middle" fill="#ffffff">二氧化碳（CO₂）</text>
+              </g>
+
+              <!-- Card 2: Red Blood Cell (雙凹圓盤正面+側切) -->
+              <g class="clickable-node b-part" data-blood="rbc" data-bloodpart="rbc">
+                <rect x="415" y="330" width="156" height="218" rx="10" fill="#0b1222" stroke="#dc2626" stroke-width="2" />
+                <rect x="415" y="330" width="156" height="34" rx="10" fill="rgba(220,38,38,0.28)" />
+                <text x="493" y="353" font-size="18" font-weight="900" text-anchor="middle" fill="#fca5a5">紅血球</text>
+                <!-- Biconcave disc front + dumbbell cross-section! -->
+                <circle cx="465" cy="392" r="18" fill="#ef4444" stroke="#fecaca" stroke-width="1.5" />
+                <circle cx="465" cy="392" r="8" fill="#7f1d1d" opacity="0.85" />
+                <!-- Dumbbell side profile -->
+                <path d="M 498 380 Q 518 390 538 380 Q 546 392 538 404 Q 518 394 498 404 Q 490 392 498 380 Z" fill="#ef4444" stroke="#fecaca" stroke-width="1.5" />
+                <text x="518" y="416" font-size="11" font-weight="800" text-anchor="middle" fill="#fecaca">雙凹圓盤剖面</text>
+                <text x="493" y="438" font-size="13" font-weight="800" text-anchor="middle" fill="#f8fafc">數目最多・成熟無核</text>
+                <text x="493" y="458" font-size="12" font-weight="700" text-anchor="middle" fill="#cbd5e1">無粒線體(靠葡萄糖)</text>
+                <text x="493" y="479" font-size="13" font-weight="900" text-anchor="middle" fill="#fbbf24">★ 運 O₂・最愛 CO</text>
+                <rect x="425" y="492" width="136" height="44" rx="7" fill="rgba(185,28,28,0.22)" stroke="#ef4444" stroke-width="1.2" />
+                <text x="493" y="511" font-size="13" font-weight="800" text-anchor="middle" fill="#fca5a5">異常病症：貧血</text>
+                <text x="493" y="529" font-size="11.5" font-weight="700" text-anchor="middle" fill="#fef2f2">(一氧化碳中毒奪氧)</text>
+              </g>
+
+              <!-- Card 3: White Blood Cell -->
+              <g class="clickable-node b-part" data-blood="wbc" data-bloodpart="wbc">
+                <rect x="582" y="330" width="156" height="218" rx="10" fill="#0b1222" stroke="#0284c7" stroke-width="2" />
+                <rect x="582" y="330" width="156" height="34" rx="10" fill="rgba(2,132,199,0.28)" />
+                <text x="660" y="353" font-size="18" font-weight="900" text-anchor="middle" fill="#7dd3fc">白血球</text>
+                <!-- Large WBC with prominent multi-lobed purple nucleus -->
+                <circle cx="660" cy="392" r="22" fill="#f8fafc" stroke="#38bdf8" stroke-width="2.5" />
+                <path d="M 650 385 Q 656 378 664 385 Q 673 390 666 400 Q 658 404 652 397 Q 646 392 650 385 Z" fill="#6366f1" />
+                <text x="660" y="432" font-size="13" font-weight="800" text-anchor="middle" fill="#f8fafc">體積最大・數目最少</text>
+                <text x="660" y="453" font-size="13" font-weight="900" text-anchor="middle" fill="#fde047">★ 有細胞核(驗DNA)</text>
+                <text x="660" y="474" font-size="12" font-weight="700" text-anchor="middle" fill="#cbd5e1">變形蟲運動・吞菌/抗體</text>
+                <rect x="592" y="492" width="136" height="44" rx="7" fill="rgba(14,165,233,0.18)" stroke="#38bdf8" stroke-width="1.2" />
+                <text x="660" y="511" font-size="13" font-weight="800" text-anchor="middle" fill="#7dd3fc">異常病症：血癌</text>
+                <text x="660" y="529" font-size="11.5" font-weight="700" text-anchor="middle" fill="#e0f2fe">(入侵增多可診斷病情)</text>
+              </g>
+
+              <!-- Card 4: Platelet -->
+              <g class="clickable-node b-part" data-blood="platelet" data-bloodpart="platelet">
+                <rect x="749" y="330" width="157" height="218" rx="10" fill="#0b1222" stroke="#db2777" stroke-width="2" />
+                <rect x="749" y="330" width="157" height="34" rx="10" fill="rgba(219,39,119,0.28)" />
+                <text x="827" y="353" font-size="18" font-weight="900" text-anchor="middle" fill="#f9a8d4">血小板</text>
+                <!-- Irregular tiny fragments + fibrin threads -->
+                <polygon points="804,386 814,382 818,392 808,396" fill="#f472b6" stroke="#fbcfe8" stroke-width="1.2" />
+                <polygon points="824,394 835,388 838,400 826,404" fill="#f472b6" stroke="#fbcfe8" stroke-width="1.2" />
+                <polygon points="842,380 852,385 846,395 839,388" fill="#f472b6" stroke="#fbcfe8" stroke-width="1.2" />
+                <path d="M 800 398 L 856 382 M 804 380 L 852 402" stroke="#fde047" stroke-width="1.5" opacity="0.8" />
+                <text x="827" y="432" font-size="13" font-weight="800" text-anchor="middle" fill="#f8fafc">體積最小・無細胞核</text>
+                <text x="827" y="453" font-size="12.5" font-weight="800" text-anchor="middle" fill="#fbcfe8">含凝血物質</text>
+                <text x="827" y="474" font-size="12" font-weight="700" text-anchor="middle" fill="#cbd5e1">受傷促使血液凝固堵傷口</text>
+                <rect x="759" y="492" width="137" height="44" rx="7" fill="rgba(219,39,119,0.2)" stroke="#f472b6" stroke-width="1.2" />
+                <text x="827" y="511" font-size="13" font-weight="800" text-anchor="middle" fill="#f9a8d4">異常病症：血友病</text>
+                <text x="827" y="529" font-size="11.5" font-weight="700" text-anchor="middle" fill="#fdf2f8">(避免傷口失血過多)</text>
+              </g>
+            </svg>
+          </div>
+        </section>
+
+        <!-- Right: Blood Component & Simulation Panel -->
+        <aside class="control-panel">
+          <div>
+            <div class="panel-section-title">血液成分聚焦（點選發光對照）</div>
+            <div class="blood-comp-grid">
+              <button data-blood="overview" class="blood-comp-btn full-span active">
+                <span>🩸 血液組成總覽（血漿＋三種血球）</span>
+              </button>
+              <button data-blood="plasma" class="blood-comp-btn">
+                <span>血漿</span><span>運 CO₂/養分</span>
+              </button>
+              <button data-blood="rbc" class="blood-comp-btn">
+                <span>紅血球</span><span>運 O₂/愛 CO</span>
+              </button>
+              <button data-blood="wbc" class="blood-comp-btn">
+                <span>白血球</span><span>有核驗 DNA</span>
+              </button>
+              <button data-blood="platelet" class="blood-comp-btn">
+                <span>血小板</span><span>凝血止血</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="panel-section-title">三大課堂情境實測</div>
+            <div class="cat-grid">
+              <button id="btn-blood-co" class="cat-btn">
+                <span>☠️ 釋放一氧化碳 CO（搶奪氧氣）</span>
+                <span id="co-state-lbl">關閉</span>
+              </button>
+              <button id="btn-blood-pathogen" class="cat-btn">
+                <span>🦠 病原體入侵（白血球增生吞噬）</span>
+                <span id="blood-pathogen-lbl">關閉</span>
+              </button>
+              <button id="btn-blood-wound" class="cat-btn">
+                <span>🩹 血管破裂（血小板凝血堵傷口）</span>
+                <span id="wound-state-lbl">關閉</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="focus-card">
+            <span id="blood-badge" class="focus-badge">血液組成總覽</span>
+            <h2 id="blood-focus-title" class="focus-title">血液 ＝ 血漿(55%) ＋ 血球(45%)</h2>
+            <p id="blood-focus-desc" class="focus-desc">
+              記住兩大氣體運輸核心：<br>
+              1. <b>二氧化碳（CO₂）</b>主要由淡黃色<b>「血漿」</b>運送（還有水、養分、廢物、抗體與激素）。<br>
+              2. <b>氧氣（O₂）</b>由無核雙凹圓盤狀<b>「紅血球」</b>運送，但它<b>特別喜歡「一氧化碳 (CO)」</b>，一遇到 CO 就會搶先結合造成中毒！
+            </p>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <!-- Bottom Playbar -->
+    <footer class="playbar">
+      <button id="btn-play" class="play-btn">暫停流動</button>
+      <button id="btn-reset" class="reset-btn">重設畫面</button>
+
+      <div class="speed-group" aria-label="演示速度">
+        <button data-speed="0.5" class="speed-btn">慢速 0.5x</button>
+        <button data-speed="1" class="speed-btn active">正常 1x</button>
+        <button data-speed="2" class="speed-btn">快速 2x</button>
+      </div>
+
+      <div id="playbar-status" class="playbar-status">狀態：完整雙循環流動中</div>
+    </footer>
+  </div>
+
+  <script>
+    /* ================================================================
+       VIEW 1 DATA: HEART CIRCULATION + 12-STEP SPOTLIGHT
+    ================================================================ */
+    const INFO_DATA = {
+      overview: {
+        badge: "總覽",
+        title: "雙循環演示準備就緒",
+        desc: "點選右側「單步逐站導覽」可從第 1 站（左心室）到第 12 站（左心房）逐一點亮路徑，讓學生看清目前血液流到哪裡！"
+      },
+      "left-heart": {
+        badge: "分類 ①・充氧血",
+        title: "左心（左心房 ＋ 左心室）",
+        desc: "左半邊心臟一律為「充氧血」。左心房收肺靜脈血，左心室壓入大動脈（主動脈）送往全身。"
+      },
+      "right-heart": {
+        badge: "分類 ②・缺氧血",
+        title: "右心（右心房 ＋ 右心室）",
+        desc: "右半邊心臟一律為「缺氧血」。右心房收上、下大靜脈血，右心室壓入肺動脈送往肺部。"
+      },
+      atria: {
+        badge: "分類 ③・連靜脈（回心）",
+        title: "心房（右心房 ＋ 左心房）",
+        desc: "心房連接「靜脈」接收血液回心（右心房←大靜脈、左心房←肺靜脈）。心房與心室之間有「瓣膜」，確保血液單向流入心室、不會逆流回心房。"
+      },
+      ventricles: {
+        badge: "分類 ④・連動脈（離心）",
+        title: "心室（右心室 ＋ 左心室）",
+        desc: "心室連接「動脈」推動血液離心（右心室→肺動脈、左心室→大動脈）。心室與動脈之間也有「瓣膜」，防止壓出去的血液逆流回心室。"
+      },
+      ra: { badge: "第 7 站・右心房", title: "右心房（體循環終點）", desc: "接收上、下大靜脈回流的缺氧血，再經由「心房與心室間瓣膜」單向壓入右心室（防止逆流）。" },
+      rv: { badge: "第 8 站・右心室", title: "右心室（肺循環起點）", desc: "收縮將缺氧血經由「心室與動脈間瓣膜」壓入肺動脈，防止血液逆流回右心室或右心房。" },
+      la: { badge: "第 12 站・左心房", title: "左心房（肺循環終點）", desc: "接收肺靜脈送回的充氧血，再經由「心房與心室間瓣膜」單向壓入左心室（防止逆流）。" },
+      lv: { badge: "第 1 站・左心室", title: "左心室（體循環起點）", desc: "心室壁最厚！強力收縮將充氧血經由「心室與動脈間瓣膜」壓入大動脈（主動脈），防止血液逆流回心室。" },
+      aorta: { badge: "第 2 站・大動脈(主動脈)", title: "大動脈（主動脈）", desc: "與左心室交界處有「心室與動脈間瓣膜」防止逆流；管壁最厚且富彈性，將高壓充氧血離心送往小動脈。" },
+      arteriole: { badge: "第 3 站・小動脈", title: "小動脈", desc: "管徑較細，將大動脈送來的充氧血分配進入組織微血管。" },
+      body: { badge: "第 4 站・組織微血管", title: "組織微血管（物質交換）", desc: "將氧氣（O₂）與養分送給組織細胞，並帶走二氧化碳（CO₂），充氧血變為缺氧血。" },
+      venule: { badge: "第 5 站・小靜脈", title: "小靜脈", desc: "收集組織微血管流出的缺氧血，匯集後進入上、下大靜脈。" },
+      "vena-cava": { badge: "第 6 站・上、下大靜脈", title: "上、下大靜脈", desc: "管徑較粗的靜脈主幹（靜脈內亦有瓣膜防逆流），將全身缺氧血送回右心房。" },
+      "valves-av": {
+        badge: "心臟瓣膜（房室之間）",
+        title: "心房 ↔ 心室間瓣膜",
+        desc: "位於「右心房↔右心室」與「左心房↔左心室」之間，只允許血液從心房流向心室，心室收縮時瓣膜關閉，防止血液逆流回心房！"
+      },
+      "valves-sl": {
+        badge: "心臟瓣膜（心室與動脈之間）",
+        title: "心室 ↔ 動脈間瓣膜",
+        desc: "位於「右心室→肺動脈」與「左心室→大動脈」出口處，只允許血液離心壓出動脈，心室舒張時瓣膜關閉，防止血液從動脈逆流回心室！"
+      },
+      "pulm-art": { badge: "第 9 站・肺動脈", title: "肺動脈（離心・缺氧血）", desc: "與右心室交界處有「心室與動脈間瓣膜」防逆流；雖稱動脈，但流動的是「缺氧血」，前往肺部換氣。" },
+      lungs: { badge: "第 10 站・肺泡微血管", title: "肺泡微血管（氣體交換）", desc: "排出二氧化碳（CO₂）、吸入氧氣（O₂），缺氧血變為充氧血。" },
+      "pulm-vein": { badge: "第 11 站・肺靜脈", title: "肺靜脈（回心・充氧血）", desc: "連接左心房回到心臟（故稱靜脈），流動的是剛換氣完的「充氧血」。" }
+    };
+
+    const STEPS = [
+      { id: "lv", targets: ["node-lv"], bx: 517, by: 328, routeIdx: 9, label: "左心室" },
+      { id: "aorta", targets: ["path-aorta", "lbl-aorta"], bx: 685, by: 332, routeIdx: 0, label: "大動脈(主動脈)" },
+      { id: "arteriole", targets: ["path-arteriole", "lbl-arteriole"], bx: 700, by: 468, routeIdx: 1, label: "小動脈" },
+      { id: "body", targets: ["node-body"], bx: 460, by: 486, routeIdx: 2, label: "組織微血管" },
+      { id: "venule", targets: ["path-venule", "lbl-venule"], bx: 220, by: 468, routeIdx: 3, label: "小靜脈" },
+      { id: "vena-cava", targets: ["path-vena-cava", "lbl-vena-cava"], bx: 195, by: 286, routeIdx: 4, label: "上、下大靜脈" },
+      { id: "ra", targets: ["node-ra"], bx: 403, by: 230, routeIdx: 5, label: "右心房" },
+      { id: "rv", targets: ["node-rv"], bx: 403, by: 328, routeIdx: 5, label: "右心室" },
+      { id: "pulm-art", targets: ["path-pulm-art", "lbl-pulm-art"], bx: 245, by: 165, routeIdx: 6, label: "肺動脈" },
+      { id: "lungs", targets: ["node-lungs"], bx: 460, by: 84, routeIdx: 7, label: "肺泡微血管" },
+      { id: "pulm-vein", targets: ["path-pulm-vein", "lbl-pulm-vein"], bx: 675, by: 165, routeIdx: 8, label: "肺靜脈" },
+      { id: "la", targets: ["node-la"], bx: 517, by: 230, routeIdx: 9, label: "左心房" }
+    ];
+
+    const stepDotsContainer = document.getElementById("step-dots");
+    STEPS.forEach((s, i) => {
+      const btn = document.createElement("button");
+      btn.className = "step-dot-btn";
+      btn.textContent = i + 1;
+      btn.title = s.label;
+      btn.addEventListener("click", () => showStep(i));
+      stepDotsContainer.appendChild(btn);
+    });
+
+    const particlesLayer = document.getElementById("particles-layer");
+    const statusEl = document.getElementById("playbar-status");
+
+    const routes = [
+      { el: document.getElementById("path-aorta"), loop: "systemic", cat: ["left-heart", "ventricles"], color: "#ef4444", count: 4, speedMul: 1 },
+      { el: document.getElementById("path-arteriole"), loop: "systemic", cat: ["left-heart"], color: "#f87171", count: 3, speedMul: 0.9 },
+      { el: document.getElementById("path-body-cap"), loop: "systemic", cat: [], color: "#c084fc", count: 4, speedMul: 0.7 },
+      { el: document.getElementById("path-venule"), loop: "systemic", cat: ["right-heart"], color: "#60a5fa", count: 3, speedMul: 0.9 },
+      { el: document.getElementById("path-vena-cava"), loop: "systemic", cat: ["right-heart", "atria"], color: "#3b82f6", count: 5, speedMul: 1 },
+      { el: document.getElementById("path-right-heart"), loop: "both", cat: ["right-heart"], color: "#3b82f6", count: 2, speedMul: 1.1 },
+      { el: document.getElementById("path-pulm-art"), loop: "pulmonary", cat: ["right-heart", "ventricles"], color: "#3b82f6", count: 6, speedMul: 1 },
+      { el: document.getElementById("path-lung-cap"), loop: "pulmonary", cat: [], color: "#c084fc", count: 4, speedMul: 0.7 },
+      { el: document.getElementById("path-pulm-vein"), loop: "pulmonary", cat: ["left-heart", "atria"], color: "#ef4444", count: 6, speedMul: 1 },
+      { el: document.getElementById("path-left-heart"), loop: "both", cat: ["left-heart"], color: "#ef4444", count: 2, speedMul: 1.1 }
+    ];
+
+    const particles = [];
+    routes.forEach((r, idx) => {
+      const len = r.el.getTotalLength();
+      for (let i = 0; i < r.count; i++) {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("r", "6");
+        circle.setAttribute("fill", r.color);
+        circle.setAttribute("stroke", "#ffffff");
+        circle.setAttribute("stroke-width", "1.6");
+        particlesLayer.appendChild(circle);
+        particles.push({
+          el: circle,
+          path: r.el,
+          len,
+          routeIdx: idx,
+          loop: r.loop,
+          cat: r.cat,
+          speedMul: r.speedMul,
+          t: i / r.count
+        });
+      }
+    });
+
+    /* ================================================================
+       VIEW 2 DATA: ORGAN SUBSTANCE CHANGE VISUALIZATION
+    ================================================================ */
+    const SUBSTANCES = [
+      { key: "o2", name: "氧氣 (O₂)", color: "#ef4444", badgeBg: "#991b1b" },
+      { key: "co2", name: "二氧化碳 (CO₂)", color: "#38bdf8", badgeBg: "#075985" },
+      { key: "waste", name: "含氮廢物 (尿素)", color: "#eab308", badgeBg: "#854d0e" },
+      { key: "nutrient", name: "養分 (葡萄糖等)", color: "#22c55e", badgeBg: "#166534" }
+    ];
+
+    const ORGAN_DATA = {
+      brain: {
+        title: "一般器官（腦）",
+        inVessel: "動脈（充氧血）",
+        outVessel: "靜脈（缺氧血）",
+        inColor: "#dc2626",
+        outColor: "#2563eb",
+        iconTitle: "🧠 腦部微血管交換區",
+        sub: "腦細胞進行呼吸作用：消耗 O₂、養分；排出 CO₂、含氮廢物",
+        changes: { o2: "decrease", co2: "increase", waste: "increase", nutrient: "decrease" },
+        summaryTitle: "減少：氧氣、養分",
+        summaryDesc: "一般器官細胞行呼吸作用會消耗「氧氣」與「養分」，並將代謝產生的「二氧化碳」與「含氮廢物」排入血液中。"
+      },
+      kidney: {
+        title: "泌尿器官（腎臟）",
+        inVessel: "腎動脈（充氧血）",
+        outVessel: "腎靜脈（缺氧血）",
+        inColor: "#dc2626",
+        outColor: "#2563eb",
+        iconTitle: "🫘 腎臟微血管過濾區",
+        sub: "腎臟過濾血液形成尿液排出含氮廢物，同時消耗 O₂、養分",
+        changes: { o2: "decrease", co2: "increase", waste: "decrease", nutrient: "decrease" },
+        summaryTitle: "減少：氧氣、含氮廢物、養分",
+        summaryDesc: "腎臟會把血液中的「含氮廢物（尿素）」過濾形成尿液排出，因此流經腎臟後含氮廢物明顯減少；細胞仍消耗氧氣與養分，產生二氧化碳。"
+      },
+      lung: {
+        title: "呼吸器官（肺）",
+        inVessel: "肺動脈（缺氧血）",
+        outVessel: "肺靜脈（充氧血）",
+        inColor: "#2563eb",
+        outColor: "#dc2626",
+        iconTitle: "🫁 肺泡微血管氣體交換區",
+        sub: "肺泡排出 CO₂、補入 O₂；肺細胞仍消耗養分並產生含氮廢物",
+        changes: { o2: "increase", co2: "decrease", waste: "increase", nutrient: "decrease" },
+        summaryTitle: "減少：二氧化碳、養分",
+        summaryDesc: "在肺泡處「二氧化碳」擴散呼出（減少），「氧氣」進入血液（增加）；但肺部細胞本身仍需消耗「養分」並排出「含氮廢物」。"
+      },
+      intestine: {
+        title: "消化吸收器官（小腸）",
+        inVessel: "動脈（充氧血）",
+        outVessel: "靜脈（缺氧血）",
+        inColor: "#dc2626",
+        outColor: "#2563eb",
+        iconTitle: "🌀 小腸絨毛微血管吸收區",
+        sub: "小腸吸收大量養分進入血液；小腸細胞消耗 O₂、排出 CO₂ 與廢物",
+        changes: { o2: "decrease", co2: "increase", waste: "increase", nutrient: "increase" },
+        summaryTitle: "減少：只有氧氣（養分反而增加！）",
+        summaryDesc: "小腸絨毛吸收消化後的「養分」進入血液，因此離開小腸後養分大幅增加；但小腸細胞仍消耗「氧氣」，並產生「二氧化碳」與「含氮廢物」。"
+      }
+    };
+
+    let currentView = "circulation";
+    let isPlaying = true;
+    let speed = 1;
+    let currentStep = -1;
+    let currentOrgan = "brain";
+    let currentSubFilter = "all";
+    let lastTime = performance.now();
+
+    /* ================================================================
+       VIEW 1 LOGIC
+    ================================================================ */
+    const stepBeacon = document.getElementById("step-beacon");
+    const beaconNum = document.getElementById("beacon-num");
+
+    function updateInfoCard(key, stepIndex = null) {
+      const data = INFO_DATA[key] || INFO_DATA.overview;
+      document.getElementById("info-badge").textContent = data.badge;
+      document.getElementById("info-title").textContent = data.title;
+      document.getElementById("info-desc").textContent = data.desc;
+      document.getElementById("step-counter").textContent =
+        stepIndex !== null ? `${stepIndex + 1} / ${STEPS.length}` : "待命";
+    }
+
+    function clearStepVisuals() {
+      stepBeacon.style.display = "none";
+      document.querySelectorAll(".trail-visited").forEach((el) => el.classList.remove("trail-visited"));
+      document.querySelectorAll(".highlighted").forEach((el) => el.classList.remove("highlighted"));
+      document.querySelectorAll(".step-dot-btn").forEach((b) => {
+        b.classList.remove("visited", "current");
+      });
+    }
+
+    function resetAllDimmed() {
+      document.querySelectorAll("#circulation-svg [data-loop], #circulation-svg [data-cat], #circulation-svg .clickable-node").forEach((el) => {
+        el.classList.remove("dimmed", "trail-visited", "highlighted");
+      });
+      particles.forEach((p) => {
+        p.el.style.display = "block";
+        p.el.setAttribute("r", "6");
+        p.el.setAttribute("opacity", "1");
+      });
+    }
+
+    function clearButtonStates() {
+      document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll(".cat-btn").forEach((b) => b.classList.remove("active"));
+    }
+
+    function applyLoopFilter(mode) {
+      clearStepVisuals();
+      resetAllDimmed();
+      if (mode === "all") return;
+      document.querySelectorAll("#circulation-svg [data-loop]").forEach((el) => {
+        const loop = el.getAttribute("data-loop");
+        if (loop !== "both" && loop !== mode) el.classList.add("dimmed");
+      });
+      particles.forEach((p) => {
+        p.el.style.display = (p.loop === "both" || p.loop === mode) ? "block" : "none";
+      });
+    }
+
+    function applyCategoryFilter(cat) {
+      clearStepVisuals();
+      document.querySelectorAll("#circulation-svg [data-loop], #circulation-svg [data-cat], #circulation-svg .clickable-node").forEach((el) => {
+        const cats = (el.getAttribute("data-cat") || "").split(" ");
+        if (cats.includes(cat)) {
+          el.classList.remove("dimmed");
+          el.classList.add("highlighted");
+        } else {
+          el.classList.add("dimmed");
+        }
+      });
+      particles.forEach((p) => {
+        p.el.style.display = p.cat.includes(cat) ? "block" : "none";
+      });
+    }
+
+    function showStep(idx) {
+      currentStep = (idx + STEPS.length) % STEPS.length;
+      clearButtonStates();
+      clearStepVisuals();
+
+      // Dim all diagram nodes first
+      document.querySelectorAll("#circulation-svg [data-loop], #circulation-svg .clickable-node").forEach((el) => {
+        el.classList.add("dimmed");
+      });
+
+      // Light up visited trail (0..currentStep-1) and spotlight currentStep
+      for (let i = 0; i <= currentStep; i++) {
+        const st = STEPS[i];
+        st.targets.forEach((tid) => {
+          const el = document.getElementById(tid);
+          if (!el) return;
+          el.classList.remove("dimmed");
+          if (i < currentStep) {
+            el.classList.add("trail-visited");
+          } else {
+            el.classList.add("highlighted");
+          }
+        });
+      }
+
+      // Highlight step dots
+      document.querySelectorAll(".step-dot-btn").forEach((b, i) => {
+        if (i < currentStep) b.classList.add("visited");
+        if (i === currentStep) b.classList.add("current");
+      });
+
+      // Position glowing beacon
+      const activeStep = STEPS[currentStep];
+      stepBeacon.setAttribute("transform", `translate(${activeStep.bx}, ${activeStep.by})`);
+      beaconNum.textContent = currentStep + 1;
+      stepBeacon.style.display = "block";
+
+      // Particles: emphasize active route particles, dim visited, hide future
+      const activeRoute = activeStep.routeIdx;
+      const visitedRoutes = new Set(STEPS.slice(0, currentStep).map((s) => s.routeIdx));
+      particles.forEach((p) => {
+        if (p.routeIdx === activeRoute) {
+          p.el.style.display = "block";
+          p.el.setAttribute("r", "7.5");
+          p.el.setAttribute("opacity", "1");
+        } else if (visitedRoutes.has(p.routeIdx)) {
+          p.el.style.display = "block";
+          p.el.setAttribute("r", "5");
+          p.el.setAttribute("opacity", "0.4");
+        } else {
+          p.el.style.display = "none";
+        }
+      });
+
+      updateInfoCard(activeStep.id, currentStep);
+      statusEl.textContent = `單步導覽第 ${currentStep + 1} / ${STEPS.length} 站：${activeStep.label}`;
+    }
+
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentStep = -1;
+        clearButtonStates();
+        btn.classList.add("active");
+        const mode = btn.getAttribute("data-mode");
+        applyLoopFilter(mode);
+        updateInfoCard("overview", null);
+        const labels = { all: "完整雙循環", systemic: "體循環", pulmonary: "肺循環" };
+        statusEl.textContent = `狀態：${labels[mode]}`;
+      });
+    });
+
+    document.querySelectorAll(".cat-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentStep = -1;
+        clearButtonStates();
+        btn.classList.add("active");
+        const cat = btn.getAttribute("data-cat");
+        applyCategoryFilter(cat);
+        updateInfoCard(cat, null);
+        statusEl.textContent = `分類聚焦：${INFO_DATA[cat].title}`;
+      });
+    });
+
+    document.getElementById("btn-prev-step").addEventListener("click", () => {
+      showStep(currentStep <= 0 ? STEPS.length - 1 : currentStep - 1);
+    });
+    document.getElementById("btn-next-step").addEventListener("click", () => {
+      showStep(currentStep < 0 ? 0 : currentStep + 1);
+    });
+
+    document.querySelectorAll("#circulation-svg .clickable-node").forEach((node) => {
+      node.addEventListener("click", () => {
+        currentStep = -1;
+        clearStepVisuals();
+        resetAllDimmed();
+        clearButtonStates();
+        node.classList.add("highlighted");
+        const key = node.getAttribute("data-info");
+        updateInfoCard(key, null);
+        statusEl.textContent = `點擊聚焦：${(INFO_DATA[key] && INFO_DATA[key].title) || ""}`;
+      });
+    });
+
+    /* ================================================================
+       VIEW 2 LOGIC: ORGAN SUBSTANCE EXCHANGE
+    ================================================================ */
+    const organParticlesLayer = document.getElementById("organ-particles-layer");
+    const organExchangeBadges = document.getElementById("organ-exchange-badges");
+    const substanceBarsGroup = document.getElementById("substance-bars-group");
+    let organParticles = [];
+
+    function renderOrganScene() {
+      const data = ORGAN_DATA[currentOrgan];
+
+      document.getElementById("organ-in-label").textContent = data.inVessel;
+      document.getElementById("organ-in-label").setAttribute("fill", data.inColor === "#dc2626" ? "#fca5a5" : "#93c5fd");
+      document.getElementById("organ-out-label").textContent = data.outVessel;
+      document.getElementById("organ-out-label").setAttribute("fill", data.outColor === "#dc2626" ? "#fca5a5" : "#93c5fd");
+      document.getElementById("ov-stop-start").setAttribute("stop-color", data.inColor);
+      document.getElementById("ov-stop-end").setAttribute("stop-color", data.outColor);
+
+      document.getElementById("organ-mid-label").textContent = data.title;
+      document.getElementById("organ-box-icon-name").textContent = data.iconTitle;
+      document.getElementById("organ-box-sub").textContent = data.sub;
+
+      document.getElementById("organ-badge").textContent = data.title;
+      document.getElementById("organ-focus-title").textContent = data.summaryTitle;
+      document.getElementById("organ-focus-desc").textContent = data.summaryDesc;
+
+      // Render top exchange badges around the organ box
+      organExchangeBadges.innerHTML = "";
+      const decList = [];
+      const incList = [];
+      SUBSTANCES.forEach((s) => {
+        const chg = data.changes[s.key];
+        if (chg === "decrease") decList.push(s);
+        else incList.push(s);
+      });
+
+      // Left/Top badges for decreased substances (leaving blood into organ)
+      decList.forEach((s, idx) => {
+        const visible = currentSubFilter === "all" || currentSubFilter === "decrease";
+        const bx = 310 + idx * 112;
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("opacity", visible ? "1" : "0.18");
+        g.innerHTML = `
+          <rect x="${bx}" y="90" width="104" height="30" rx="8" fill="${s.badgeBg}" stroke="${s.color}" stroke-width="2" />
+          <text x="${bx + 52}" y="110" font-size="14" font-weight="800" text-anchor="middle" fill="#ffffff">${s.name.split(" ")[0]} ↓ 離開</text>
+        `;
+        organExchangeBadges.appendChild(g);
+      });
+
+      // Bottom badges for increased substances (entering blood from organ)
+      incList.forEach((s, idx) => {
+        const visible = currentSubFilter === "all" || currentSubFilter === "increase";
+        const bx = 310 + idx * 112;
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("opacity", visible ? "1" : "0.18");
+        g.innerHTML = `
+          <rect x="${bx}" y="216" width="104" height="30" rx="8" fill="${s.badgeBg}" stroke="${s.color}" stroke-width="2" />
+          <text x="${bx + 52}" y="236" font-size="14" font-weight="800" text-anchor="middle" fill="#ffffff">${s.name.split(" ")[0]} ↑ 進入</text>
+        `;
+        organExchangeBadges.appendChild(g);
+      });
+
+      // Render 4 side-by-side comparison cards (Before vs After bars)
+      substanceBarsGroup.innerHTML = "";
+      SUBSTANCES.forEach((s, idx) => {
+        const chg = data.changes[s.key];
+        const isDec = chg === "decrease";
+        const visible =
+          currentSubFilter === "all" ||
+          (currentSubFilter === "decrease" && isDec) ||
+          (currentSubFilter === "increase" && !isDec);
+
+        const colX = 28 + idx * 220;
+        const cardW = 204;
+        const cardY = 334;
+        const cardH = 208;
+
+        const inBarW = isDec ? 132 : 52;
+        const outBarW = isDec ? 44 : 138;
+        const statusColor = isDec ? "#38bdf8" : "#fb923c";
+        const statusText = isDec ? "↓ 減少" : "↑ 增加";
+        const statusBg = isDec ? "rgba(14, 116, 144, 0.35)" : "rgba(194, 65, 12, 0.35)";
+
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("opacity", visible ? "1" : "0.16");
+        g.innerHTML = `
+          <rect x="${colX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="12" fill="#0f172a" stroke="${visible ? s.color : '#334155'}" stroke-width="2.5" />
+          <circle cx="${colX + 24}" cy="${cardY + 28}" r="9" fill="${s.color}" />
+          <text x="${colX + 42}" y="${cardY + 35}" font-size="18" font-weight="800" fill="#f8fafc">${s.name}</text>
+
+          <!-- Arterial bar -->
+          <text x="${colX + 16}" y="${cardY + 68}" font-size="14" font-weight="700" fill="#94a3b8">流入（動脈端）</text>
+          <rect x="${colX + 16}" y="${cardY + 76}" width="172" height="18" rx="5" fill="#1e293b" />
+          <rect x="${colX + 16}" y="${cardY + 76}" width="${inBarW}" height="18" rx="5" fill="${s.color}" opacity="0.6" />
+
+          <!-- Venous bar -->
+          <text x="${colX + 16}" y="${cardY + 120}" font-size="14" font-weight="700" fill="#f8fafc">流出（靜脈端）</text>
+          <rect x="${colX + 16}" y="${cardY + 128}" width="172" height="20" rx="5" fill="#1e293b" />
+          <rect x="${colX + 16}" y="${cardY + 128}" width="${outBarW}" height="20" rx="5" fill="${s.color}" />
+
+          <!-- Change Badge -->
+          <rect x="${colX + 22}" y="${cardY + 160}" width="${cardW - 44}" height="34" rx="8" fill="${statusBg}" stroke="${statusColor}" stroke-width="2" />
+          <text x="${colX + cardW / 2}" y="${cardY + 183}" font-size="19" font-weight="900" text-anchor="middle" fill="${statusColor}">${statusText}</text>
+        `;
+        substanceBarsGroup.appendChild(g);
+      });
+
+      // Rebuild animated substance particles flowing through the organ vessel
+      organParticlesLayer.innerHTML = "";
+      organParticles = [];
+      SUBSTANCES.forEach((s, sIdx) => {
+        const chg = data.changes[s.key];
+        const visible =
+          currentSubFilter === "all" ||
+          (currentSubFilter === "decrease" && chg === "decrease") ||
+          (currentSubFilter === "increase" && chg === "increase");
+
+        for (let k = 0; k < 6; k++) {
+          const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          c.setAttribute("r", "6.5");
+          c.setAttribute("fill", s.color);
+          c.setAttribute("stroke", "#ffffff");
+          c.setAttribute("stroke-width", "1.4");
+          c.style.display = visible ? "block" : "none";
+          organParticlesLayer.appendChild(c);
+          organParticles.push({
+            el: c,
+            sIdx,
+            chg,
+            t: (k / 6 + sIdx * 0.08) % 1,
+            laneOffset: (sIdx - 1.5) * 8,
+            exitOrEnterSeed: k % 2 === 0
+          });
+        }
+      });
+
+      if (currentView === "organs") {
+        statusEl.textContent = `器官演示：${data.title}｜${data.summaryTitle}`;
+      }
+    }
+
+    document.querySelectorAll(".organ-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".organ-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentOrgan = btn.getAttribute("data-organ");
+        renderOrganScene();
+      });
+    });
+
+    document.querySelectorAll(".substance-filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".substance-filter-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentSubFilter = btn.getAttribute("data-subfilter");
+        renderOrganScene();
+      });
+    });
+
+    /* ================================================================
+       VIEW 3 DATA & LOGIC: LYMPHATIC CIRCULATION
+    ================================================================ */
+    const LYMPH_INFO = {
+      overview: {
+        badge: "淋巴循環總覽",
+        title: "血漿＋白血球滲出 → 組織液 → 淋巴液",
+        desc: "血漿與「白血球」（可作變形蟲運動穿過微血管壁）滲出微血管進入組織間隙；經微淋管收集成淋巴液、淋巴結過濾後注入靜脈。紅血球則無法滲出。"
+      },
+      plasma: {
+        badge: "步驟 1・微血管滲出",
+        title: "血漿與白血球滲出微血管",
+        desc: "流經微血管時，部分血漿會滲出管壁，且「白血球」能變形穿出微血管壁進入組織消滅病菌；紅血球無法穿出，必須留在血管內。"
+      },
+      tissue: {
+        badge: "步驟 2・組織細胞間",
+        title: "組織液（含滲出的白血球）",
+        desc: "滲出微血管並包圍組織細胞的液體稱為「組織液」，白血球會在此巡邏吞噬病原體，多餘組織液則滲入盲端微淋管。"
+      },
+      liquid: {
+        badge: "構造 ①・淋巴液",
+        title: "淋巴液（淋巴）",
+        desc: "由組織間的「組織液」經多條盲端「微淋管」分支收集並匯入淋巴管形成，內含滲出的白血球與少量蛋白質，不含紅血球。"
+      },
+      vessel: {
+        badge: "構造 ②・淋巴管",
+        title: "微淋管匯入淋巴管（具瓣膜防逆流）",
+        desc: "起點為盲端「微淋管」，多條細微淋管分支收集組織液後匯入較粗的「淋巴管」，經「淋巴結」過濾並由管內「瓣膜」防止逆流，最終單向注入「大靜脈」。"
+      },
+      node: {
+        badge: "構造 ③・淋巴結",
+        title: "淋巴結（白血球聚集過濾）",
+        desc: "過濾異物與病原體的結構，大量滲出與循環至此的「白血球」會聚集於內；感染發炎時淋巴結常會腫大。"
+      },
+      "vein-return": {
+        badge: "步驟 4・回到血液循環",
+        title: "注入大靜脈（變回血漿）",
+        desc: "過濾後的淋巴液經由淋巴管注入鎖骨下的大靜脈，重新成為血漿回到右心房，完成體液與白血球回收。"
+      }
+    };
+
+    const LYMPH_STEPS = [
+      { id: "plasma", targets: ["lymph-blood-vessel", "lc-step-0"] },
+      { id: "tissue", targets: ["lymph-tissue-zone", "lc-step-1"] },
+      { id: "node", targets: ["lymph-vessel-group", "lymph-node-group", "lc-step-2"] },
+      { id: "vein-return", targets: ["lymph-blood-vessel", "lc-step-3"] }
+    ];
+
+    let lymphStep = -1;
+    let pathogenActive = false;
+    let edemaActive = false;
+
+    const lymphParticlesLayer = document.getElementById("lymph-particles-layer");
+    const lymphMainPath = document.getElementById("path-lymph-main");
+    const lymphMainLen = lymphMainPath.getTotalLength();
+    const lymphBranchPaths = [
+      document.getElementById("path-lymph-branch-1"),
+      document.getElementById("path-lymph-branch-2")
+    ];
+    const lymphBranchLens = lymphBranchPaths.map((p) => p.getTotalLength());
+
+    // Build lymph view particles:
+    // 1) RBCs staying strictly inside top blood vessel
+    const lymphRBCs = [];
+    for (let i = 0; i < 9; i++) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+      el.setAttribute("rx", "9");
+      el.setAttribute("ry", "5.5");
+      el.setAttribute("fill", "#ef4444");
+      el.setAttribute("stroke", "#fecaca");
+      el.setAttribute("stroke-width", "1.4");
+      lymphParticlesLayer.appendChild(el);
+      lymphRBCs.push({ el, t: i / 9 });
+    }
+
+    // 2) Seeping fluid particles (plasma yellow -> tissue cyan -> into two blind-ended micro-lymphatic branches)
+    const seepParticles = [];
+    for (let i = 0; i < 8; i++) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      el.setAttribute("r", "5.5");
+      el.setAttribute("stroke", "#ffffff");
+      el.setAttribute("stroke-width", "1.2");
+      lymphParticlesLayer.appendChild(el);
+      seepParticles.push({ el, t: i / 8, xBase: 145 + (i % 4) * 72, branchIdx: i % 2 });
+    }
+
+    // 2b) Micro-lymphatic branch particles merging into #path-lymph-main
+    const branchFlowParticles = [];
+    for (let i = 0; i < 6; i++) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      el.setAttribute("r", "4.8");
+      el.setAttribute("fill", "#86efac");
+      el.setAttribute("stroke", "#ffffff");
+      el.setAttribute("stroke-width", "1.1");
+      lymphParticlesLayer.appendChild(el);
+      branchFlowParticles.push({ el, branchIdx: i % 2, t: Math.floor(i / 2) / 3 });
+    }
+
+    // 3) Lymph fluid particles moving along #path-lymph-main -> into vein
+    const lymphFlowParticles = [];
+    for (let i = 0; i < 10; i++) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      el.setAttribute("r", "6");
+      el.setAttribute("fill", "#4ade80");
+      el.setAttribute("stroke", "#ffffff");
+      el.setAttribute("stroke-width", "1.3");
+      lymphParticlesLayer.appendChild(el);
+      lymphFlowParticles.push({ el, t: i / 10 });
+    }
+
+    // 4) Pathogen particles (shown when pathogenActive = true, neutralized at lymph node cx=540)
+    const pathogenParticles = [];
+    for (let i = 0; i < 5; i++) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      el.setAttribute("r", "7");
+      el.setAttribute("fill", "#f43f5e");
+      el.setAttribute("stroke", "#fef08a");
+      el.setAttribute("stroke-width", "2");
+      el.style.display = "none";
+      lymphParticlesLayer.appendChild(el);
+      pathogenParticles.push({ el, t: i / 5 });
+    }
+
+    // 5) White Blood Cells (白血球變形滲出微血管 -> 進入組織間隙 -> 進入微淋管分支)
+    const lymphWBCs = [];
+    for (let i = 0; i < 3; i++) {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      const body = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+      body.setAttribute("rx", "10");
+      body.setAttribute("ry", "10");
+      body.setAttribute("fill", "#f8fafc");
+      body.setAttribute("stroke", "#38bdf8");
+      body.setAttribute("stroke-width", "2.5");
+      const nuc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      nuc.setAttribute("r", "4.2");
+      nuc.setAttribute("fill", "#6366f1");
+      const tag = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      tag.setAttribute("y", "-13");
+      tag.setAttribute("font-size", "12");
+      tag.setAttribute("font-weight", "800");
+      tag.setAttribute("text-anchor", "middle");
+      tag.setAttribute("fill", "#e0f2fe");
+      tag.textContent = "白血球";
+      g.appendChild(body);
+      g.appendChild(nuc);
+      g.appendChild(tag);
+      lymphParticlesLayer.appendChild(g);
+      lymphWBCs.push({ g, body, t: i / 3, xStart: 130 + i * 95, branchIdx: i % 2 });
+    }
+
+    function updateLymphInfoCard(key, stepIdx = null) {
+      const d = LYMPH_INFO[key] || LYMPH_INFO.overview;
+      document.getElementById("lymph-badge").textContent = d.badge;
+      document.getElementById("lymph-focus-title").textContent = d.title;
+      document.getElementById("lymph-focus-desc").textContent = d.desc;
+      document.getElementById("lymph-step-counter").textContent =
+        stepIdx !== null ? `${stepIdx + 1} / ${LYMPH_STEPS.length}` : "待命";
+    }
+
+    function clearLymphHighlights() {
+      document.querySelectorAll("#lymph-svg .highlighted, #lymph-svg .dimmed").forEach((el) => {
+        el.classList.remove("highlighted", "dimmed");
+      });
+      document.querySelectorAll(".lymph-struct-btn").forEach((b) => b.classList.remove("active"));
+    }
+
+    function showLymphStep(idx) {
+      lymphStep = (idx + LYMPH_STEPS.length) % LYMPH_STEPS.length;
+      clearLymphHighlights();
+      const st = LYMPH_STEPS[lymphStep];
+      const allIds = [
+        "lymph-blood-vessel", "lymph-tissue-zone", "lymph-vessel-group",
+        "lymph-node-group", "lc-step-0", "lc-step-1", "lc-step-2", "lc-step-3"
+      ];
+      allIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add(st.targets.includes(id) ? "highlighted" : "dimmed");
+      });
+      updateLymphInfoCard(st.id, lymphStep);
+      statusEl.textContent = `淋巴循環第 ${lymphStep + 1} / ${LYMPH_STEPS.length} 步：${LYMPH_INFO[st.id].title}`;
+    }
+
+    document.querySelectorAll(".lymph-struct-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        lymphStep = -1;
+        clearLymphHighlights();
+        btn.classList.add("active");
+        const key = btn.getAttribute("data-lymphinfo");
+        const targetId = key === "vessel" ? "lymph-vessel-group" : key === "node" ? "lymph-node-group" : "lc-step-2";
+        const el = document.getElementById(targetId);
+        if (el) el.classList.add("highlighted");
+        updateLymphInfoCard(key, null);
+        statusEl.textContent = `淋巴系統構造：${LYMPH_INFO[key].title}`;
+      });
+    });
+
+    document.querySelectorAll("#lymph-svg .clickable-node").forEach((node) => {
+      node.addEventListener("click", () => {
+        lymphStep = -1;
+        clearLymphHighlights();
+        node.classList.add("highlighted");
+        const key = node.getAttribute("data-lymphinfo");
+        updateLymphInfoCard(key, null);
+        statusEl.textContent = `淋巴循環聚焦：${(LYMPH_INFO[key] && LYMPH_INFO[key].title) || ""}`;
+      });
+    });
+
+    document.getElementById("btn-lymph-prev").addEventListener("click", () => {
+      showLymphStep(lymphStep <= 0 ? LYMPH_STEPS.length - 1 : lymphStep - 1);
+    });
+    document.getElementById("btn-lymph-next").addEventListener("click", () => {
+      showLymphStep(lymphStep < 0 ? 0 : lymphStep + 1);
+    });
+
+    function syncLymphSimUI() {
+      const nodeBody = document.getElementById("lymph-node-body");
+      const nodeStatus = document.getElementById("lymph-node-status");
+      const pLbl = document.getElementById("pathogen-state-lbl");
+      const btnP = document.getElementById("btn-toggle-pathogen");
+
+      if (pathogenActive) {
+        nodeBody.setAttribute("rx", "86");
+        nodeBody.setAttribute("ry", "55");
+        nodeBody.setAttribute("fill", "#7c2d12");
+        nodeBody.setAttribute("stroke", "#fbbf24");
+        nodeStatus.textContent = "白血球聚集吞噬病原體（淋巴結腫大）";
+        nodeStatus.setAttribute("fill", "#fde047");
+        pLbl.textContent = "開啟";
+        btnP.classList.add("active");
+        pathogenParticles.forEach((pp) => { pp.el.style.display = "block"; });
+      } else {
+        nodeBody.setAttribute("rx", "74");
+        nodeBody.setAttribute("ry", "48");
+        nodeBody.setAttribute("fill", "#064e3b");
+        nodeBody.setAttribute("stroke", "#34d399");
+        nodeStatus.textContent = "過濾異物與病原體";
+        nodeStatus.setAttribute("fill", "#a7f3d0");
+        pLbl.textContent = "關閉";
+        btnP.classList.remove("active");
+        pathogenParticles.forEach((pp) => { pp.el.style.display = "none"; });
+      }
+
+      const tissueRect = document.getElementById("tissue-bg-rect");
+      const edemaAlert = document.getElementById("edema-alert");
+      const blockGate = document.getElementById("lymph-block-gate");
+      const eLbl = document.getElementById("edema-state-lbl");
+      const btnE = document.getElementById("btn-toggle-edema");
+
+      if (edemaActive) {
+        tissueRect.setAttribute("fill", "rgba(234, 88, 12, 0.22)");
+        tissueRect.setAttribute("stroke", "#fb923c");
+        edemaAlert.style.display = "block";
+        blockGate.style.display = "block";
+        eLbl.textContent = "開啟";
+        btnE.classList.add("active");
+      } else {
+        tissueRect.setAttribute("fill", "rgba(56, 189, 248, 0.08)");
+        tissueRect.setAttribute("stroke", "#38bdf8");
+        edemaAlert.style.display = "none";
+        blockGate.style.display = "none";
+        eLbl.textContent = "關閉";
+        btnE.classList.remove("active");
+      }
+    }
+
+    document.getElementById("btn-toggle-pathogen").addEventListener("click", () => {
+      pathogenActive = !pathogenActive;
+      syncLymphSimUI();
+      statusEl.textContent = pathogenActive ? "免疫模擬：病原體進入淋巴結，白血球攔截過濾中" : "免疫模擬已關閉";
+    });
+
+    document.getElementById("btn-toggle-edema").addEventListener("click", () => {
+      edemaActive = !edemaActive;
+      syncLymphSimUI();
+      statusEl.textContent = edemaActive ? "水腫模擬：淋巴管阻塞，組織液累積無法回收" : "水腫模擬已關閉";
+    });
+
+    /* ================================================================
+       VIEW 4 DATA & LOGIC: VESSEL STRUCTURE COMPARISON
+    ================================================================ */
+    const VESSEL_METRICS = {
+      overview: {
+        badge: "六大指標總覽",
+        title: "動脈 vs 靜脈 vs 微血管",
+        desc: "點擊上方指標或左側任一血管剖面，對應構造與數值排行將同步發光高亮，方便課堂逐項比較。",
+        svgTitle: "綜合特徵",
+        art: { val: "壁最厚・壓最大", sub: "彈性最好｜無瓣膜", pct: 95 },
+        vein: { val: "寬最寬・有瓣膜", sub: "壁次之｜壓力最小", pct: 70 },
+        cap: { val: "壁最薄・寬最窄", sub: "流速最慢｜壓次之", pct: 35 }
+      },
+      wall: {
+        badge: "指標比較 ①・管壁厚度",
+        title: "管壁厚度：動脈 ＞ 靜脈 ＞ 微血管",
+        desc: "動脈承受高壓故管壁「最厚」；靜脈「次之」；微血管僅單層扁平細胞構成「最薄」，利於物質交換。",
+        svgTitle: "管壁厚度",
+        art: { val: "最厚", sub: "多層肌肉＋彈性纖維", pct: 96 },
+        vein: { val: "次之", sub: "肌肉層明顯較薄", pct: 50 },
+        cap: { val: "最薄", sub: "僅單層扁平細胞", pct: 12 }
+      },
+      width: {
+        badge: "指標比較 ②・血管寬度（管腔）",
+        title: "血管寬度：靜脈 ＞ 動脈 ＞ 微血管",
+        desc: "靜脈管腔「最寬」容納大量回心血；動脈壁厚使管腔「次之」；微血管「最窄」，僅容紅血球單列通過。",
+        svgTitle: "血管寬度",
+        art: { val: "次之", sub: "管壁厚使管腔較窄", pct: 55 },
+        vein: { val: "最寬", sub: "管腔最寬闊容血多", pct: 96 },
+        cap: { val: "最窄", sub: "僅容紅血球單列通過", pct: 14 }
+      },
+      elasticity: {
+        badge: "指標比較 ③・彈性",
+        title: "彈性大小：動脈 ＞ 靜脈 ＞ 微血管",
+        desc: "動脈富含彈性纖維「最好」，可隨心搏擴張回彈（脈搏）；靜脈「次之」；微血管無肌肉彈性層「最差」。",
+        svgTitle: "管壁彈性",
+        art: { val: "最好", sub: "高彈性纖維可搏動", pct: 96 },
+        vein: { val: "次之", sub: "彈性纖維較少", pct: 48 },
+        cap: { val: "最差", sub: "單層細胞無肌肉層", pct: 10 }
+      },
+      speed: {
+        badge: "指標比較 ④・血流速度",
+        title: "血液流速：動脈 ＞ 靜脈 ＞ 微血管",
+        desc: "動脈流速「最快」；靜脈「次之」；微血管總截面積最大故流速「最慢」，讓細胞有時間充分交換物質。",
+        svgTitle: "血液流速",
+        art: { val: "最快", sub: "高壓高速離心輸出", pct: 96 },
+        vein: { val: "次之", sub: "穩定匯流回心", pct: 54 },
+        cap: { val: "最慢", sub: "減速利於物質交換", pct: 14 }
+      },
+      pressure: {
+        badge: "指標比較 ⑤・血壓大小（必考重點）",
+        title: "血壓大小：動脈 ＞ 微血管 ＞ 靜脈",
+        desc: "必考！離心越遠阻力越高、血壓遞減，故動脈「最大」＞ 微血管「次之」＞ 靜脈「最小」（微血管＞靜脈）。",
+        svgTitle: "血壓大小",
+        art: { val: "最大", sub: "直接承接心室射血", pct: 96 },
+        vein: { val: "最小", sub: "經過微血管後壓最低", pct: 16 },
+        cap: { val: "次之", sub: "介於動脈與靜脈之間", pct: 52 }
+      },
+      valve: {
+        badge: "指標比較 ⑥・瓣膜有無",
+        title: "瓣膜：動脈（無）｜靜脈（有）｜微血管（無）",
+        desc: "靜脈血壓最小、流速較慢，管內「有瓣膜」防血液逆流；動與微血管皆「無瓣膜」。可點擊上方按鈕實測閉合！",
+        svgTitle: "瓣膜構造",
+        art: { val: "無", sub: "高壓單向離心不需瓣膜", pct: 10 },
+        vein: { val: "有（唯一）", sub: "防低壓血液逆流", pct: 96 },
+        cap: { val: "無", sub: "僅單層細胞管壁", pct: 10 }
+      }
+    };
+
+    const VESSEL_INDIVIDUAL_INFO = {
+      art: {
+        badge: "單一血管詳解・動脈",
+        title: "動脈：高壓・高彈性・壁最厚",
+        desc: "將血液送離心臟。管壁最厚、彈性最好，血壓最大、流速最快、無瓣膜；測「脈搏」即感受動脈搏動。"
+      },
+      vein: {
+        badge: "單一血管詳解・靜脈",
+        title: "靜脈：管腔最寬・有瓣膜・壓最小",
+        desc: "將血液送回心臟。管壁次之、寬度最寬、血壓最小、流速次之；管內具半月形「瓣膜」防止血液逆流。"
+      },
+      cap: {
+        badge: "單一血管詳解・微血管",
+        title: "微血管：壁最薄・寬最窄・流速最慢",
+        desc: "連接小動靜脈。僅單層細胞（壁最薄）、寬度最窄（單列通過）、流速最慢以利交換；血壓「次之」，無瓣膜。"
+      }
+    };
+
+    let currentVesselMetric = "overview";
+    let focusedVesselRow = null;
+    let veinReverseTest = false;
+
+    const vesselArtRbcsLayer = document.getElementById("vessel-art-rbcs");
+    const vesselVeinRbcsLayer = document.getElementById("vessel-vein-rbcs");
+    const vesselCapRbcsLayer = document.getElementById("vessel-cap-rbcs");
+
+    function createVesselRbcPool(layer, count, cyBase, spread) {
+      const arr = [];
+      for (let i = 0; i < count; i++) {
+        const el = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+        el.setAttribute("rx", "9");
+        el.setAttribute("ry", "5.5");
+        el.setAttribute("fill", "#ef4444");
+        el.setAttribute("stroke", "#fecaca");
+        el.setAttribute("stroke-width", "1.4");
+        layer.appendChild(el);
+        const yOff = count > 1 && spread > 0 ? ((i % 3) - 1) * spread : 0;
+        arr.push({ el, x: 420 + (i / count) * 315, y: cyBase + yOff });
+      }
+      return arr;
+    }
+
+    const vesselArtRbcs = createVesselRbcPool(vesselArtRbcsLayer, 7, 124, 11);
+    const vesselVeinRbcs = createVesselRbcPool(vesselVeinRbcsLayer, 8, 294, 20);
+    const vesselCapRbcs = createVesselRbcPool(vesselCapRbcsLayer, 5, 464, 0);
+
+    function setVeinValveVisual(closed) {
+      const v1t = document.getElementById("vein-v1-top");
+      const v1b = document.getElementById("vein-v1-bot");
+      const v2t = document.getElementById("vein-v2-top");
+      const v2b = document.getElementById("vein-v2-bot");
+      const alertBox = document.getElementById("vein-valve-alert");
+      if (closed) {
+        v1t.setAttribute("d", "M 488 252 Q 504 275 516 294");
+        v1b.setAttribute("d", "M 488 336 Q 504 313 516 294");
+        v2t.setAttribute("d", "M 622 252 Q 638 275 650 294");
+        v2b.setAttribute("d", "M 622 336 Q 638 313 650 294");
+        alertBox.style.display = "block";
+      } else {
+        v1t.setAttribute("d", "M 488 252 Q 505 268 516 278");
+        v1b.setAttribute("d", "M 488 336 Q 505 320 516 310");
+        v2t.setAttribute("d", "M 622 252 Q 639 268 650 278");
+        v2b.setAttribute("d", "M 622 336 Q 639 320 650 310");
+        alertBox.style.display = "none";
+      }
+    }
+
+    function applyVesselSpotlight() {
+      const rowEls = document.querySelectorAll("#vessels-svg [data-vessel]");
+      const partEls = document.querySelectorAll("#vessels-svg .v-part");
+
+      rowEls.forEach((row) => {
+        row.classList.remove("v-row-dim", "v-row-lit");
+        if (focusedVesselRow) {
+          if (row.getAttribute("data-vessel") === focusedVesselRow) {
+            row.classList.add("v-row-lit");
+          } else {
+            row.classList.add("v-row-dim");
+          }
+        }
+      });
+
+      partEls.forEach((el) => {
+        el.classList.remove("v-dim", "v-lit");
+        if (focusedVesselRow || currentVesselMetric === "overview") return;
+
+        const tags = (el.getAttribute("data-parts") || "").split(/\s+/);
+        if (tags.includes(currentVesselMetric)) {
+          el.classList.add("v-lit");
+        } else {
+          el.classList.add("v-dim");
+        }
+      });
+    }
+
+    function renderVesselMetric(metricKey) {
+      currentVesselMetric = metricKey;
+      focusedVesselRow = null;
+      const m = VESSEL_METRICS[metricKey];
+
+      document.querySelectorAll(".metric-btn").forEach((b) => {
+        b.classList.toggle("active", b.getAttribute("data-metric") === metricKey);
+      });
+
+      document.getElementById("vessel-badge").textContent = m.badge;
+      document.getElementById("vessel-focus-title").textContent = m.title;
+      document.getElementById("vessel-focus-desc").textContent = m.desc;
+
+      // Update SVG right-hand meters
+      const rows = [
+        { key: "art", color: "#ef4444" },
+        { key: "vein", color: "#3b82f6" },
+        { key: "cap", color: "#a855f7" }
+      ];
+      rows.forEach(({ key }) => {
+        const d = m[key];
+        document.getElementById(`${key}-svg-metric-title`).textContent = m.svgTitle;
+        document.getElementById(`${key}-svg-metric-val`).textContent = d.val;
+        document.getElementById(`${key}-svg-metric-sub`).textContent = d.sub;
+        document.getElementById(`${key}-svg-metric-bar`).setAttribute("width", Math.round((d.pct / 100) * 112));
+      });
+
+      // Render ranking bars inside right panel
+      const barsContainer = document.getElementById("vessel-bars-container");
+      barsContainer.innerHTML = "";
+      const names = { art: "動脈", vein: "靜脈", cap: "微血管" };
+      rows.forEach(({ key, color }) => {
+        const d = m[key];
+        const item = document.createElement("div");
+        item.className = "vessel-bar-item";
+        item.innerHTML = `
+          <div class="vessel-bar-top">
+            <span>${names[key]}</span>
+            <span style="color:${color};">${d.val}</span>
+          </div>
+          <div class="vessel-bar-track">
+            <div class="vessel-bar-fill" style="width:${d.pct}%; background:${color};"></div>
+          </div>
+        `;
+        barsContainer.appendChild(item);
+      });
+
+      applyVesselSpotlight();
+
+      if (currentView === "vessels") {
+        statusEl.textContent = veinReverseTest
+          ? "靜脈瓣膜測試：血液試圖逆流，瓣膜立即閉合阻擋！"
+          : `血管比較：${m.title}`;
+      }
+    }
+
+    document.querySelectorAll(".metric-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        renderVesselMetric(btn.getAttribute("data-metric"));
+      });
+    });
+
+    document.querySelectorAll("#view-vessels .clickable-node").forEach((node) => {
+      node.addEventListener("click", () => {
+        const vKey = node.getAttribute("data-vessel");
+        if (focusedVesselRow === vKey) {
+          renderVesselMetric(currentVesselMetric);
+          return;
+        }
+        focusedVesselRow = vKey;
+        const info = VESSEL_INDIVIDUAL_INFO[vKey];
+        if (!info) return;
+        document.getElementById("vessel-badge").textContent = info.badge;
+        document.getElementById("vessel-focus-title").textContent = info.title;
+        document.getElementById("vessel-focus-desc").textContent = info.desc;
+        applyVesselSpotlight();
+        statusEl.textContent = `單一血管高亮：${info.title}`;
+      });
+    });
+
+    const btnToggleReverse = document.getElementById("btn-toggle-reverse");
+    const reverseStateLbl = document.getElementById("reverse-state-lbl");
+    btnToggleReverse.addEventListener("click", () => {
+      veinReverseTest = !veinReverseTest;
+      btnToggleReverse.classList.toggle("active", veinReverseTest);
+      reverseStateLbl.textContent = veinReverseTest ? "逆流阻擋中" : "關閉";
+      setVeinValveVisual(veinReverseTest);
+      if (veinReverseTest) {
+        renderVesselMetric("valve");
+      } else {
+        renderVesselMetric(currentVesselMetric);
+      }
+    });
+
+    /* ================================================================
+       VIEW 5 DATA & LOGIC: BLOOD COMPONENTS & FUNCTIONS
+    ================================================================ */
+    const BLOOD_INFO = {
+      overview: {
+        badge: "血液組成總覽",
+        title: "血液 ＝ 血漿(55%) ＋ 血球(45%)",
+        desc: "記住兩大氣體運輸核心：<br>1. <b>二氧化碳（CO₂）</b>主要由淡黃色<b>「血漿」</b>運送（還有水、養分、廢物、抗體與激素）。<br>2. <b>氧氣（O₂）</b>由無核雙凹圓盤狀<b>「紅血球」</b>運送，但它<b>特別喜歡「一氧化碳 (CO)」</b>，一遇到 CO 就會搶先結合造成中毒！"
+      },
+      plasma: {
+        badge: "血漿（淡黃色液體・~55%）",
+        title: "血漿：水＋蛋白質＋養分＋廢物＋CO₂",
+        desc: "<b>★ 常考重點：大部分「二氧化碳 (CO₂)」是由『血漿』運送，不是紅血球！</b><br>血漿同時負責運送養分（葡萄糖等）、廢物（尿素）、抗體與激素（荷爾蒙）。"
+      },
+      rbc: {
+        badge: "紅血球（數目最多・無核・無粒線體）",
+        title: "紅血球：雙凹圓盤狀・運 O₂（最愛 CO）",
+        desc: "成熟後<b>無細胞核、無粒線體</b>（以葡萄糖為養分），呈現紅色雙凹圓盤狀。專門攜帶<b>氧氣（O₂）</b>，但血紅素<b>特別喜歡一氧化碳（CO）</b>（親和力＞O₂），易造成一氧化碳中毒！異常病症：<b>貧血</b>。"
+      },
+      wbc: {
+        badge: "白血球（體積最大・數目最少・有細胞核）",
+        title: "白血球：有核可驗 DNA・變形蟲運動吞菌",
+        desc: "唯一<b>有細胞核</b>的血球（親子鑑定/驗 DNA 的對象！）。能作<b>變形蟲運動</b>穿過微血管壁吞噬病原體並產生抗體。受感染時數量會增加，可用於<b>診斷病情</b>。異常病症：<b>血癌</b>。"
+      },
+      platelet: {
+        badge: "血小板（體積最小・無核・含凝血物質）",
+        title: "血小板：受傷時促使血液凝固堵住傷口",
+        desc: "三種血球中體積<b>最小</b>、無細胞核，內含<b>凝血物質</b>。當血管受傷破裂時，血小板聚集釋出凝血物質促使<b>血液凝固</b>、堵塞傷口，避免失血過多。異常病症：<b>血友病</b>。"
+      }
+    };
+
+    let currentBloodFocus = "overview";
+    let bloodCoActive = false;
+    let bloodPathogenActive = false;
+    let bloodWoundActive = false;
+
+    const bloodPlasmaSolutesLayer = document.getElementById("blood-plasma-solutes");
+    const bloodRbcCarriersLayer = document.getElementById("blood-rbc-carriers");
+    const bloodWbcPatrolLayer = document.getElementById("blood-wbc-patrol");
+    const bloodPathogensLayer = document.getElementById("blood-pathogens-layer");
+    const bloodPlateletPoolLayer = document.getElementById("blood-platelet-pool");
+
+    // 1) Plasma solutes floating directly IN PLASMA (emphasizing CO2!)
+    const plasmaSolutes = [];
+    const soluteSpecs = [
+      { label: "CO₂", fill: "#06b6d4", textCol: "#ecfeff", r: 10 },
+      { label: "CO₂", fill: "#06b6d4", textCol: "#ecfeff", r: 10 },
+      { label: "CO₂", fill: "#06b6d4", textCol: "#ecfeff", r: 10 },
+      { label: "CO₂", fill: "#06b6d4", textCol: "#ecfeff", r: 10 },
+      { label: "養分", fill: "#f97316", textCol: "#fff7ed", r: 10 },
+      { label: "養分", fill: "#f97316", textCol: "#fff7ed", r: 10 },
+      { label: "廢物", fill: "#64748b", textCol: "#f8fafc", r: 9.5 },
+      { label: "抗體", fill: "#10b981", textCol: "#ecfdf5", r: 10 },
+      { label: "激素", fill: "#eab308", textCol: "#422006", r: 9.5 }
+    ];
+    soluteSpecs.forEach((sp, i) => {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("r", sp.r);
+      c.setAttribute("fill", sp.fill);
+      c.setAttribute("stroke", "#ffffff");
+      c.setAttribute("stroke-width", "1.2");
+      const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t.setAttribute("y", "3.5");
+      t.setAttribute("font-size", "9");
+      t.setAttribute("font-weight", "900");
+      t.setAttribute("text-anchor", "middle");
+      t.setAttribute("fill", sp.textCol);
+      t.textContent = sp.label;
+      g.appendChild(c);
+      g.appendChild(t);
+      bloodPlasmaSolutesLayer.appendChild(g);
+      plasmaSolutes.push({
+        g,
+        x: 270 + (i / soluteSpecs.length) * 610,
+        yBase: 108 + (i % 5) * 26,
+        phase: i * 1.1,
+        speedMul: 0.85 + (i % 3) * 0.14
+      });
+    });
+
+    // 2) Biconcave RBCs carrying O2 (or captured by CO!)
+    const bloodRbcs = [];
+    for (let i = 0; i < 4; i++) {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      const outer = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+      outer.setAttribute("rx", "24");
+      outer.setAttribute("ry", "15");
+      outer.setAttribute("fill", "#dc2626");
+      outer.setAttribute("stroke", "#fecaca");
+      outer.setAttribute("stroke-width", "1.6");
+      const dimple = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+      dimple.setAttribute("rx", "11");
+      dimple.setAttribute("ry", "6.5");
+      dimple.setAttribute("fill", "#7f1d1d");
+      dimple.setAttribute("opacity", "0.85");
+      g.appendChild(outer);
+      g.appendChild(dimple);
+
+      // 3 ligand gas badges docked on RBC (O2 vs CO)
+      const ligands = [];
+      const offsets = [[-13, -12], [0, -16], [13, -12]];
+      offsets.forEach(([lx, ly]) => {
+        const lg = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        lg.setAttribute("transform", `translate(${lx}, ${ly})`);
+        const lc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        lc.setAttribute("r", "7.5");
+        lc.setAttribute("fill", "#ef4444");
+        lc.setAttribute("stroke", "#fde047");
+        lc.setAttribute("stroke-width", "1.4");
+        const lt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        lt.setAttribute("y", "3");
+        lt.setAttribute("font-size", "8.5");
+        lt.setAttribute("font-weight", "900");
+        lt.setAttribute("text-anchor", "middle");
+        lt.setAttribute("fill", "#ffffff");
+        lt.textContent = "O₂";
+        lg.appendChild(lc);
+        lg.appendChild(lt);
+        g.appendChild(lg);
+        ligands.push({ lc, lt });
+      });
+
+      bloodRbcCarriersLayer.appendChild(g);
+      bloodRbcs.push({
+        g,
+        ligands,
+        x: 290 + i * 160,
+        yBase: i % 2 === 0 ? 132 : 178,
+        phase: i * 1.4
+      });
+    }
+
+    // Floating evicted O2 pills shown only during CO poisoning!
+    const freeO2WhenCo = [];
+    for (let i = 0; i < 4; i++) {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.style.display = "none";
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("r", "7");
+      c.setAttribute("fill", "#ef4444");
+      c.setAttribute("stroke", "#ffffff");
+      c.setAttribute("stroke-width", "1");
+      const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t.setAttribute("y", "3");
+      t.setAttribute("font-size", "8");
+      t.setAttribute("font-weight", "900");
+      t.setAttribute("text-anchor", "middle");
+      t.setAttribute("fill", "#ffffff");
+      t.textContent = "O₂";
+      g.appendChild(c);
+      g.appendChild(t);
+      bloodRbcCarriersLayer.appendChild(g);
+      freeO2WhenCo.push({ g, x: 320 + i * 140, y: 112 + (i % 2) * 52, phase: i });
+    }
+
+    // 3) Large nucleated WBCs (1 baseline + 2 extra spawned when pathogenActive!)
+    const bloodWbcs = [];
+    for (let i = 0; i < 3; i++) {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      if (i > 0) g.style.display = "none";
+      const body = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+      body.setAttribute("rx", "21");
+      body.setAttribute("ry", "21");
+      body.setAttribute("fill", "#f8fafc");
+      body.setAttribute("stroke", "#38bdf8");
+      body.setAttribute("stroke-width", "2.6");
+      const nuc = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      nuc.setAttribute("d", "M -9 -6 Q -3 -13 5 -6 Q 13 -1 6 8 Q -2 12 -8 5 Q -13 0 -9 -6 Z");
+      nuc.setAttribute("fill", "#6366f1");
+      const tag = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      tag.setAttribute("y", "-25");
+      tag.setAttribute("font-size", "11");
+      tag.setAttribute("font-weight", "800");
+      tag.setAttribute("text-anchor", "middle");
+      tag.setAttribute("fill", "#7dd3fc");
+      tag.textContent = i === 0 ? "白血球(有核)" : "增生白血球";
+      g.appendChild(body);
+      g.appendChild(nuc);
+      g.appendChild(tag);
+      bloodWbcPatrolLayer.appendChild(g);
+      bloodWbcs.push({ g, body, idx: i, t: i / 3 });
+    }
+
+    // Invading pathogens in tissue space (visible when bloodPathogenActive = true)
+    const bloodPathogens = [];
+    for (let i = 0; i < 4; i++) {
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("r", "7");
+      c.setAttribute("fill", "#f43f5e");
+      c.setAttribute("stroke", "#fef08a");
+      c.setAttribute("stroke-width", "1.6");
+      c.style.display = "none";
+      bloodPathogensLayer.appendChild(c);
+      bloodPathogens.push({ el: c, xBase: 470 + i * 34, yBase: 274 + (i % 2) * 14, phase: i * 1.5 });
+    }
+
+    // 4) Smallest platelet fragments (rush to wound x=750, y=58 when bloodWoundActive)
+    const bloodPlatelets = [];
+    for (let i = 0; i < 7; i++) {
+      const p = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      p.setAttribute("points", "-5,-3 4,-5 6,3 -3,5");
+      p.setAttribute("fill", "#f472b6");
+      p.setAttribute("stroke", "#fbcfe8");
+      p.setAttribute("stroke-width", "1.2");
+      bloodPlateletPoolLayer.appendChild(p);
+      bloodPlatelets.push({
+        el: p,
+        x: 280 + (i / 7) * 590,
+        yBase: 100 + (i % 4) * 34,
+        targetX: 730 + (i % 5) * 10,
+        targetY: 54 + (i % 2) * 8
+      });
+    }
+
+    function selectBloodComponent(compKey) {
+      currentBloodFocus = compKey;
+      document.querySelectorAll(".blood-comp-btn").forEach((b) => {
+        b.classList.toggle("active", b.getAttribute("data-blood") === compKey);
+      });
+
+      const info = BLOOD_INFO[compKey] || BLOOD_INFO.overview;
+      document.getElementById("blood-badge").textContent = info.badge;
+      document.getElementById("blood-focus-title").innerHTML = info.title;
+      document.getElementById("blood-focus-desc").innerHTML = info.desc;
+
+      document.querySelectorAll("#blood-svg .b-part").forEach((el) => {
+        el.classList.remove("b-dim", "b-lit");
+        if (compKey === "overview") return;
+        const parts = (el.getAttribute("data-bloodpart") || "").split(/\s+/);
+        if (parts.includes(compKey)) {
+          el.classList.add("b-lit");
+        } else {
+          el.classList.add("b-dim");
+        }
+      });
+
+      if (currentView === "blood") {
+        statusEl.textContent = `血液可視化：${info.title}`;
+      }
+    }
+
+    function syncBloodSimUI() {
+      // CO poisoning state
+      document.getElementById("btn-blood-co").classList.toggle("active", bloodCoActive);
+      document.getElementById("co-state-lbl").textContent = bloodCoActive ? "CO 搶佔中" : "關閉";
+      document.getElementById("blood-co-alert").style.display = bloodCoActive ? "block" : "none";
+      bloodRbcs.forEach((rbc) => {
+        rbc.ligands.forEach(({ lc, lt }) => {
+          if (bloodCoActive) {
+            lc.setAttribute("fill", "#9333ea");
+            lc.setAttribute("stroke", "#f43f5e");
+            lt.textContent = "CO";
+          } else {
+            lc.setAttribute("fill", "#ef4444");
+            lc.setAttribute("stroke", "#fde047");
+            lt.textContent = "O₂";
+          }
+        });
+      });
+      freeO2WhenCo.forEach((o) => {
+        o.g.style.display = bloodCoActive ? "block" : "none";
+      });
+
+      // Pathogen state
+      document.getElementById("btn-blood-pathogen").classList.toggle("active", bloodPathogenActive);
+      document.getElementById("blood-pathogen-lbl").textContent = bloodPathogenActive ? "變形增生中" : "關閉";
+      bloodWbcs.forEach((w, idx) => {
+        if (idx > 0) w.g.style.display = bloodPathogenActive ? "block" : "none";
+      });
+      bloodPathogens.forEach((bp) => {
+        bp.el.style.display = bloodPathogenActive ? "block" : "none";
+      });
+
+      // Wound clot state
+      document.getElementById("btn-blood-wound").classList.toggle("active", bloodWoundActive);
+      document.getElementById("wound-state-lbl").textContent = bloodWoundActive ? "凝血堵傷口" : "關閉";
+      document.getElementById("blood-wall-wound-patch").style.display = bloodWoundActive ? "none" : "block";
+      document.getElementById("blood-clot-mesh").style.display = bloodWoundActive ? "block" : "none";
+    }
+
+    document.querySelectorAll(".blood-comp-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        selectBloodComponent(btn.getAttribute("data-blood"));
+      });
+    });
+
+    document.querySelectorAll("#blood-svg .clickable-node").forEach((node) => {
+      node.addEventListener("click", () => {
+        const comp = node.getAttribute("data-blood");
+        if (!comp) return;
+        selectBloodComponent(currentBloodFocus === comp ? "overview" : comp);
+      });
+    });
+
+    document.getElementById("btn-blood-co").addEventListener("click", () => {
+      bloodCoActive = !bloodCoActive;
+      syncBloodSimUI();
+      selectBloodComponent(bloodCoActive ? "rbc" : currentBloodFocus);
+      statusEl.textContent = bloodCoActive
+        ? "一氧化碳實測：CO 搶佔紅血球血紅素，O₂ 無法結合運送！"
+        : "一氧化碳模擬已關閉";
+    });
+
+    document.getElementById("btn-blood-pathogen").addEventListener("click", () => {
+      bloodPathogenActive = !bloodPathogenActive;
+      syncBloodSimUI();
+      selectBloodComponent(bloodPathogenActive ? "wbc" : currentBloodFocus);
+      statusEl.textContent = bloodPathogenActive
+        ? "病原體入侵：白血球數量增加，並作變形蟲運動穿出微血管吞噬病菌！"
+        : "病原體入侵模擬已關閉";
+    });
+
+    document.getElementById("btn-blood-wound").addEventListener("click", () => {
+      bloodWoundActive = !bloodWoundActive;
+      syncBloodSimUI();
+      selectBloodComponent(bloodWoundActive ? "platelet" : currentBloodFocus);
+      statusEl.textContent = bloodWoundActive
+        ? "凝血止血實測：血小板聚集傷口釋出凝血物質，堵塞傷口避免失血！"
+        : "血管破裂模擬已關閉";
+    });
+
+    /* ================================================================
+       TOPBAR MODULE SWITCHER & BOTTOM PLAYBAR
+    ================================================================ */
+    document.querySelectorAll(".primary-tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".primary-tab-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentView = btn.getAttribute("data-view");
+
+        document.querySelectorAll(".page-view").forEach((v) => v.classList.remove("active"));
+        document.getElementById(`view-${currentView}`).classList.add("active");
+
+        document.getElementById("circulation-loop-tabs").style.display =
+          currentView === "circulation" ? "flex" : "none";
+
+        if (currentView === "organs") {
+          renderOrganScene();
+        } else if (currentView === "lymph") {
+          statusEl.textContent = lymphStep >= 0
+            ? `淋巴循環第 ${lymphStep + 1} / ${LYMPH_STEPS.length} 步`
+            : "狀態：淋巴循環（血漿 → 組織液 → 淋巴液 → 靜脈）流動中";
+        } else if (currentView === "vessels") {
+          renderVesselMetric(currentVesselMetric);
+        } else if (currentView === "blood") {
+          selectBloodComponent(currentBloodFocus);
+        } else {
+          statusEl.textContent = currentStep >= 0
+            ? `單步導覽第 ${currentStep + 1} / ${STEPS.length} 站：${STEPS[currentStep].label}`
+            : "狀態：完整雙循環流動中";
+        }
+      });
+    });
+
+    const btnPlay = document.getElementById("btn-play");
+    btnPlay.addEventListener("click", () => {
+      isPlaying = !isPlaying;
+      btnPlay.textContent = isPlaying ? "暫停流動" : "繼續流動";
+      btnPlay.classList.toggle("paused", !isPlaying);
+    });
+
+    document.getElementById("btn-reset").addEventListener("click", () => {
+      if (currentView === "circulation") {
+        currentStep = -1;
+        clearStepVisuals();
+        resetAllDimmed();
+        clearButtonStates();
+        document.querySelector('.tab-btn[data-mode="all"]').classList.add("active");
+        updateInfoCard("overview", null);
+        statusEl.textContent = "狀態：完整雙循環流動中";
+      } else if (currentView === "organs") {
+        currentOrgan = "brain";
+        currentSubFilter = "all";
+        document.querySelectorAll(".organ-btn").forEach((b, i) => b.classList.toggle("active", i === 0));
+        document.querySelectorAll(".substance-filter-btn").forEach((b, i) => b.classList.toggle("active", i === 0));
+        renderOrganScene();
+      } else if (currentView === "vessels") {
+        veinReverseTest = false;
+        btnToggleReverse.classList.remove("active");
+        reverseStateLbl.textContent = "關閉";
+        setVeinValveVisual(false);
+        renderVesselMetric("overview");
+      } else if (currentView === "blood") {
+        bloodCoActive = false;
+        bloodPathogenActive = false;
+        bloodWoundActive = false;
+        syncBloodSimUI();
+        selectBloodComponent("overview");
+      } else {
+        lymphStep = -1;
+        pathogenActive = false;
+        edemaActive = false;
+        clearLymphHighlights();
+        syncLymphSimUI();
+        updateLymphInfoCard("overview", null);
+        statusEl.textContent = "狀態：淋巴循環（血漿 → 組織液 → 淋巴液 → 靜脈）流動中";
+      }
+    });
+
+    document.querySelectorAll(".speed-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        speed = parseFloat(btn.getAttribute("data-speed"));
+        document.querySelectorAll(".speed-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    /* ================================================================
+       MAIN ANIMATION LOOP
+    ================================================================ */
+    function animate(now) {
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+
+      if (isPlaying) {
+        if (currentView === "circulation") {
+          particles.forEach((p) => {
+            p.t = (p.t + dt * 0.25 * speed * p.speedMul) % 1;
+            const pt = p.path.getPointAtLength(p.t * p.len);
+            p.el.setAttribute("cx", pt.x);
+            p.el.setAttribute("cy", pt.y);
+          });
+        } else if (currentView === "organs") {
+          organParticles.forEach((op) => {
+            op.t = (op.t + dt * 0.24 * speed) % 1;
+            const x = 40 + op.t * 840;
+            let y = 165 + op.laneOffset;
+            let opacity = 1;
+
+            if (op.chg === "decrease") {
+              if (op.exitOrEnterSeed && op.t > 0.36) {
+                const prog = Math.min(1, (op.t - 0.36) / 0.24);
+                y = y - prog * 56;
+                opacity = 1 - prog;
+              }
+            } else {
+              if (op.exitOrEnterSeed) {
+                if (op.t < 0.38) {
+                  opacity = 0;
+                } else {
+                  const prog = Math.min(1, (op.t - 0.38) / 0.22);
+                  y = (y + 56) - prog * 56;
+                  opacity = prog;
+                }
+              }
+            }
+
+            op.el.setAttribute("cx", x);
+            op.el.setAttribute("cy", y);
+            op.el.setAttribute("opacity", opacity.toFixed(2));
+          });
+        } else if (currentView === "lymph") {
+          // View 3: Lymphatic circulation animation
+          lymphRBCs.forEach((r) => {
+            r.t = (r.t + dt * 0.22 * speed) % 1;
+            r.el.setAttribute("cx", 40 + r.t * 840);
+            r.el.setAttribute("cy", 96 + Math.sin(r.t * Math.PI * 6) * 6);
+          });
+
+          seepParticles.forEach((sp) => {
+            sp.t = (sp.t + dt * 0.28 * speed) % 1;
+            let x = sp.xBase;
+            let y = 96;
+            let color = "#fde047";
+            let opacity = 1;
+
+            if (sp.t < 0.3) {
+              // Plasma in capillary
+              x = sp.xBase + sp.t * 140;
+              y = 104 + (sp.t / 0.3) * 40;
+            } else if (sp.t < 0.75) {
+              // Tissue fluid drifting toward either upper (y=342) or lower (y=428) blind-ended micro-lymphatic branch
+              const p = (sp.t - 0.3) / 0.45;
+              const branchY = sp.branchIdx === 0 ? 320 : 398;
+              color = "#38bdf8";
+              x = (sp.xBase + 42) + p * (190 - (sp.xBase + 42));
+              y = 144 + p * ((edemaActive ? 275 : branchY) - 144);
+            } else {
+              // Entering blind-ended lymph capillary branch (or blocked if edema)
+              const p = (sp.t - 0.75) / 0.25;
+              const targetY = sp.branchIdx === 0 ? 342 : 428;
+              if (edemaActive) {
+                color = "#fb923c";
+                x = 190 + Math.sin(p * Math.PI * 2) * 30;
+                y = 285;
+                opacity = 1 - p * 0.4;
+              } else {
+                color = "#4ade80";
+                x = 190;
+                y = (targetY - 22) + p * 22;
+                opacity = 1 - p;
+              }
+            }
+            sp.el.setAttribute("cx", x);
+            sp.el.setAttribute("cy", y);
+            sp.el.setAttribute("fill", color);
+            sp.el.setAttribute("opacity", opacity.toFixed(2));
+          });
+
+          // Animate particles inside the two micro-lymphatic branches converging into main lymphatic vessel
+          branchFlowParticles.forEach((bp) => {
+            if (edemaActive) {
+              bp.t = (bp.t + dt * 0.08 * speed) % 0.85;
+            } else {
+              bp.t = (bp.t + dt * 0.65 * speed) % 1;
+            }
+            const pt = lymphBranchPaths[bp.branchIdx].getPointAtLength(bp.t * lymphBranchLens[bp.branchIdx]);
+            bp.el.setAttribute("cx", pt.x);
+            bp.el.setAttribute("cy", pt.y);
+          });
+
+          lymphFlowParticles.forEach((lp) => {
+            if (edemaActive) {
+              // Blocked before gate (t < 0.04)
+              lp.t = (lp.t + dt * 0.04 * speed) % 0.04;
+            } else {
+              lp.t = (lp.t + dt * 0.22 * speed) % 1;
+            }
+            const pt = lymphMainPath.getPointAtLength(lp.t * lymphMainLen);
+            lp.el.setAttribute("cx", pt.x);
+            lp.el.setAttribute("cy", pt.y);
+            // Turns back to plasma yellow-blue as it enters the vein at the end
+            lp.el.setAttribute("fill", lp.t > 0.92 ? "#fde047" : "#4ade80");
+          });
+
+          if (pathogenActive && !edemaActive) {
+            pathogenParticles.forEach((pp) => {
+              pp.t = (pp.t + dt * 0.18 * speed) % 0.42;
+              const pt = lymphMainPath.getPointAtLength(pp.t * lymphMainLen);
+              pp.el.setAttribute("cx", pt.x);
+              pp.el.setAttribute("cy", pt.y);
+              // Filtered out inside the lymph node (around t = 0.30 -> 0.42)
+              const op = pp.t > 0.30 ? Math.max(0, 1 - (pp.t - 0.30) / 0.12) : 1;
+              pp.el.setAttribute("opacity", op.toFixed(2));
+            });
+          }
+
+          // Animate White Blood Cells squeezing through capillary wall (變形蟲運動滲出)
+          lymphWBCs.forEach((w) => {
+            w.t = (w.t + dt * 0.16 * speed) % 1;
+            let x = w.xStart;
+            let y = 96;
+            let rx = 10;
+            let ry = 10;
+            let op = 1;
+
+            if (w.t < 0.25) {
+              // Moving inside capillary
+              const p = w.t / 0.25;
+              x = (w.xStart - 70) + p * 70;
+              y = 96;
+            } else if (w.t < 0.48) {
+              // Squeezing/deforming through the capillary pore (y=116)
+              const p = (w.t - 0.25) / 0.23;
+              x = w.xStart + Math.sin(p * Math.PI) * 4;
+              y = 96 + p * 44;
+              rx = 10 - Math.sin(p * Math.PI) * 4.5;
+              ry = 10 + Math.sin(p * Math.PI) * 4.5;
+            } else if (w.t < 0.82) {
+              // Patrolling tissue space toward either blind-ended micro-lymphatic branch
+              const p = (w.t - 0.48) / 0.34;
+              const branchApproachY = w.branchIdx === 0 ? 316 : 396;
+              x = w.xStart + p * (190 - w.xStart);
+              y = 140 + p * ((edemaActive ? 275 : branchApproachY) - 140);
+              rx = 10 + Math.sin(p * Math.PI * 4) * 1.5;
+              ry = 10 - Math.sin(p * Math.PI * 4) * 1.5;
+            } else {
+              // Entering blind-ended lymph capillary branch toward lymph node
+              const p = (w.t - 0.82) / 0.18;
+              const targetY = w.branchIdx === 0 ? 342 : 428;
+              if (edemaActive) {
+                x = 190 + Math.cos(p * Math.PI * 2) * 24;
+                y = 280;
+                op = 1 - p * 0.3;
+              } else {
+                x = 190;
+                y = (targetY - 26) + p * 26;
+                op = 1 - p;
+              }
+            }
+            w.g.setAttribute("transform", `translate(${x.toFixed(1)}, ${y.toFixed(1)})`);
+            w.body.setAttribute("rx", rx.toFixed(1));
+            w.body.setAttribute("ry", ry.toFixed(1));
+            w.g.setAttribute("opacity", op.toFixed(2));
+          });
+        } else if (currentView === "vessels") {
+          // Artery elastic cross-section pulse & rapid RBC flow (流速最快)
+          const pulseAmp = currentVesselMetric === "elasticity" ? 0.085 : 0.055;
+          const pulse = 1 + pulseAmp * Math.max(0, Math.sin(now * 0.005 * speed));
+          document.getElementById("vessel-art-cross-pulse").setAttribute("transform", `scale(${pulse.toFixed(3)})`);
+
+          vesselArtRbcs.forEach((r) => {
+            r.x += dt * 210 * speed;
+            if (r.x > 742) r.x = 410;
+            r.el.setAttribute("cx", r.x.toFixed(1));
+            r.el.setAttribute("cy", r.y);
+          });
+
+          // Vein moderate RBC flow OR blocked by closed valves if reverse test active
+          vesselVeinRbcs.forEach((r) => {
+            if (veinReverseTest) {
+              r.x -= dt * 75 * speed;
+              // Clamp RBCs trying to flow backward at the closed semi-lunar valves (x=526 and x=660)
+              if (r.x < 528 && r.x > 505) r.x = 528;
+              else if (r.x < 662 && r.x > 640) r.x = 662;
+              else if (r.x < 422) r.x = 422;
+            } else {
+              r.x += dt * 105 * speed;
+              if (r.x > 742) r.x = 410;
+            }
+            r.el.setAttribute("cx", r.x.toFixed(1));
+            r.el.setAttribute("cy", r.y);
+          });
+
+          // Capillary single-file slowest RBC flow (流速最慢)
+          vesselCapRbcs.forEach((r) => {
+            r.x += dt * 36 * speed;
+            if (r.x > 742) r.x = 410;
+            r.el.setAttribute("cx", r.x.toFixed(1));
+            r.el.setAttribute("cy", r.y);
+          });
+        } else if (currentView === "blood") {
+          const tSec = now * 0.001;
+          // 1) Plasma solutes (CO2, nutrients, waste, antibodies/hormones) flowing smoothly
+          plasmaSolutes.forEach((s) => {
+            s.x += dt * 85 * speed * s.speedMul;
+            if (s.x > 905) s.x = 252;
+            const y = s.yBase + Math.sin(tSec * 2 + s.phase) * 7;
+            s.g.setAttribute("transform", `translate(${s.x.toFixed(1)}, ${y.toFixed(1)})`);
+          });
+
+          // 2) Biconcave RBCs carrying O2 (or captured by CO!)
+          bloodRbcs.forEach((r) => {
+            r.x += dt * 76 * speed;
+            if (r.x > 915) r.x = 240;
+            const y = r.yBase + Math.sin(tSec * 1.5 + r.phase) * 5;
+            r.g.setAttribute("transform", `translate(${r.x.toFixed(1)}, ${y.toFixed(1)})`);
+          });
+
+          if (bloodCoActive) {
+            freeO2WhenCo.forEach((o) => {
+              o.x += dt * 95 * speed;
+              if (o.x > 905) o.x = 255;
+              const y = o.y + Math.cos(tSec * 3.2 + o.phase) * 14;
+              o.g.setAttribute("transform", `translate(${o.x.toFixed(1)}, ${y.toFixed(1)})`);
+            });
+          }
+
+          // 3) White Blood Cells (patrol normally, or squeeze through bottom pore (516,243) during pathogen invasion!)
+          bloodWbcs.forEach((w) => {
+            if (!bloodPathogenActive) {
+              if (w.idx === 0) {
+                w.t = (w.t + dt * 0.08 * speed) % 1;
+                const wx = 290 + w.t * 580;
+                const wy = 205 + Math.sin(w.t * Math.PI * 4) * 6;
+                w.g.setAttribute("transform", `translate(${wx.toFixed(1)}, ${wy.toFixed(1)})`);
+                w.body.setAttribute("rx", "21");
+                w.body.setAttribute("ry", "21");
+              }
+            } else {
+              w.t = (w.t + dt * 0.2 * speed) % 1;
+              let wx = 516;
+              let wy = 204;
+              let rx = 21;
+              let ry = 21;
+              if (w.idx === 0) {
+                // Squeeze vertically downward through capillary pore at (516, 243) -> engulf pathogens
+                if (w.t < 0.35) {
+                  const p = w.t / 0.35;
+                  wx = 450 + p * 66;
+                  wy = 206;
+                } else if (w.t < 0.65) {
+                  const p = (w.t - 0.35) / 0.3;
+                  wx = 516;
+                  wy = 206 + p * 66;
+                  rx = 21 - Math.sin(p * Math.PI) * 9;
+                  ry = 21 + Math.sin(p * Math.PI) * 9;
+                } else {
+                  const p = (w.t - 0.65) / 0.35;
+                  wx = 516 + Math.sin(p * Math.PI * 2) * 32;
+                  wy = 272;
+                  rx = 21 + Math.sin(p * Math.PI * 4) * 2;
+                  ry = 21 - Math.sin(p * Math.PI * 4) * 2;
+                }
+              } else {
+                // Spawned WBCs circulating inside vessel
+                wx = 290 + ((w.t + w.idx * 0.35) % 1) * 580;
+                wy = w.idx === 1 ? 156 : 196;
+              }
+              w.g.setAttribute("transform", `translate(${wx.toFixed(1)}, ${wy.toFixed(1)})`);
+              w.body.setAttribute("rx", rx.toFixed(1));
+              w.body.setAttribute("ry", ry.toFixed(1));
+            }
+          });
+
+          if (bloodPathogenActive) {
+            bloodPathogens.forEach((bp) => {
+              const px = bp.xBase + Math.sin(tSec * 2.5 + bp.phase) * 8;
+              const py = bp.yBase + Math.cos(tSec * 3 + bp.phase) * 5;
+              bp.el.setAttribute("cx", px.toFixed(1));
+              bp.el.setAttribute("cy", py.toFixed(1));
+            });
+          }
+
+          // 4) Platelets floating normally OR clustering at wound (750, 56) when bloodWoundActive
+          bloodPlatelets.forEach((pl, idx) => {
+            let px, py;
+            if (bloodWoundActive && idx < 5) {
+              px = pl.targetX + Math.sin(tSec * 4 + idx) * 2;
+              py = pl.targetY + Math.cos(tSec * 4 + idx) * 2;
+            } else {
+              pl.x += dt * 110 * speed;
+              if (pl.x > 900) pl.x = 258;
+              px = pl.x;
+              py = pl.yBase + Math.sin(tSec * 2.2 + idx) * 6;
+            }
+            pl.el.setAttribute("transform", `translate(${px.toFixed(1)}, ${py.toFixed(1)}) rotate(${(idx * 45 + tSec * 30) % 360})`);
+          });
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    renderOrganScene();
+    renderVesselMetric("overview");
+    selectBloodComponent("overview");
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
